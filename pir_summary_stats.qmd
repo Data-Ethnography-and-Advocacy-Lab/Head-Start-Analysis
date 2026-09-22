@@ -1,0 +1,81 @@
+---
+title: "PIR Summary Stats - MA"
+format: html
+editor: source
+---
+
+```{r}
+library(tidyverse)
+library(readxl)
+
+pir_import_a <- function(year) {
+  
+  filename <- paste0("data/pir_export_", year, ".xlsx")
+  var
+  pir_data <- read_excel(filename, sheet = 1, skip = 1)
+  pir_data <- pir_data |>
+    mutate(pir_year = year) |>
+    select(pir_year, Region:City, A.13.d) |>
+    filter(Region != "Totals")
+}
+
+pir_import_b <- function(year) {
+  
+  filename <- paste0("data/pir_export_", year, ".xlsx")
+  var
+  pir_data <- read_excel(filename, sheet = 2, skip = 1)
+  pir_data <- pir_data |>
+    mutate(pir_year = year) |>
+    select(pir_year, Region:City) |>
+    filter(Region != "Totals")
+}
+
+pir_import_c <- function(year) {
+  
+  filename <- paste0("data/pir_export_", year, ".xlsx")
+  var
+  pir_data <- read_excel(filename, sheet = 3, skip = 1)
+  pir_data <- pir_data |>
+    mutate(pir_year = year) |>
+    select(pir_year, Region:City) |>
+    filter(Region != "Totals")
+}
+
+year <- c(2016:2019, 2021:2025)
+
+
+pir_a <- map_df(year, pir_import_a)
+pir_b <- map_df(year, pir_import_b)
+pir_c <- map_df(year, pir_import_c)
+
+```
+
+```{r}
+options(scipen = 999)
+pir_a |>
+  filter(State == "MA") |>
+  group_by(pir_year) |>
+  summarize(homeless_children = sum(A.13.d)) |>
+  ggplot(aes(x = pir_year, y = homeless_children)) +
+  geom_line() +
+  scale_x_continuous(breaks = min(pir_a$pir_year):max(pir_a$pir_year)) +
+  labs(x = "Year", 
+       y = "Number of Homeless Children", 
+       title = "Head Start PIR, MA, 2016-2025") +
+  theme_minimal() 
+
+pir_a |>
+  filter(State == "MA") |>
+  group_by(pir_year, `Type`) |>
+  summarize(homeless_children = sum(A.13.d)) |>
+  ggplot(aes(x = pir_year, y = homeless_children)) +
+  geom_line() +
+  facet_wrap(vars(`Type`)) +
+  scale_x_continuous(breaks = min(pir_a$pir_year):max(pir_a$pir_year)) +
+  labs(x = "Year", 
+       y = "Number of Homeless Children", 
+       title = "Head Start PIR, MA, 2016-2025") +
+  theme_minimal() 
+
+```
+
