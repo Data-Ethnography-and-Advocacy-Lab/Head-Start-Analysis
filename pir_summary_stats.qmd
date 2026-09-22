@@ -37,7 +37,7 @@ pir_import_c <- function(year) {
   pir_data <- read_excel(filename, sheet = 3, skip = 1)
   pir_data <- pir_data |>
     mutate(pir_year = year) |>
-    select(pir_year, Region:City, C47) |>
+    select(pir_year, Region:City, C.47, C.22, C.22.a, C.22.a.1) |>
     filter(Region != "Totals")
 }
 
@@ -46,7 +46,7 @@ year <- c(2021:2025)
 
 pir_a <- map_df(year, pir_import_a)
 pir_b <- map_df(year, pir_import_b)
-pir_c <- map_df(year, pir_import_c)
+pir_c <- map_df(2025, pir_import_c)
 
 ```
 
@@ -118,6 +118,23 @@ pir_a |>
                      "-" , 
                      max(pir_a$pir_year))) +
   theme_minimal() 
+
+```
+
+## Disability Enrollment in MA vs Other States
+
+```{r}
+pir_list <- list(pir_a, pir_b, pir_c)
+combined_pir <- pir_list |>
+  reduce(full_join, by = colnames(pir_a)[1:9])
+  
+combined_pir |>
+  filter(pir_year == 2025) |>
+  group_by(State) |>
+  summarize(total_child_enroll = sum(A.10.g), 
+      total_disability_enroll = sum(C.22.a.1),
+      percent_disability = total_disability_enroll / total_child_enroll * 100) |>
+  arrange(desc(percent_disability))
 
 ```
 
