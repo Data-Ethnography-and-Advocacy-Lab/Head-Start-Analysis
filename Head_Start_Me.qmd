@@ -1,0 +1,67 @@
+---
+title: "Head_Start_ME"
+format: html
+---
+
+
+## Data Wrangling
+
+```{r}
+library(tidyverse)
+library(broom)
+library(readr)
+library(dplyr)
+library(janitor)
+```
+
+```{r}
+OS <- .Platform$OS.type
+
+if (OS == "unix"){
+  temp_path <- "~/RCode/" # MAC file path
+} else if (OS == "windows"){
+  temp_path <- "../Head-Start-Analysis/data/pir_export_" # windows file path
+} else {
+  print("ERROR: OS could not be identified")
+}
+```
+
+
+```{r}
+HSa <-read_csv("../Head-Start-Analysis/data/PIR_Export_2025.csv")
+HSb <-read_csv("../Head-Start-Analysis/data/PIR_Export_2025_B.csv")
+HSc <-read_csv("../Head-Start-Analysis/data/PIR_Export_2025_C.csv")
+HSd <-read_csv("../Head-Start-Analysis/data/PIR_Export_2025_D.csv")
+
+```
+
+```{r}
+#combining all tables
+df_list <- list(HSa,HSb, HSc,HSd)
+
+combined_df <- df_list |>
+  reduce(full_join, by = colnames(HSa)[1:10])
+combined_df <- clean_names(combined_df)
+```
+
+
+```{r}
+#just Ma
+filtered <- filter(combined_df, x2 == "MA")
+```
+
+
+```{r}
+#testing if vis works
+ggplot(filtered, aes(as.numeric(the_number_who_are_proficient_in_a_language_other_than_english), as.numeric(total_number_of_dual_language_learners)))+geom_point()+labs(x = "bilingual teachers ", y = "dual lang learners")
+```
+
+
+```{r}
+#finding the outlier
+filtered|>select("x7", 
+                 "total_number_of_dual_language_learners",
+                 "the_number_who_are_proficient_in_a_language_other_than_english",
+                 "acf_funded_enrollment")|> mutate(across(2:3, as.numeric))|>filter(total_number_of_dual_language_learners > 900)
+```
+
