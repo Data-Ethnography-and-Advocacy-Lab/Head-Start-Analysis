@@ -15,7 +15,7 @@ pir_import_a <- function(year) {
   pir_data <- read_excel(filename, sheet = 1, skip = 1)
   pir_data <- pir_data |>
     mutate(pir_year = year) |>
-    select(pir_year, Region:City, A.10.g, A.13.d) |>
+    select(pir_year, Region:City, A.10.g, A.13.d, A.27) |>
     filter(Region != "Totals")
 }
 
@@ -26,7 +26,7 @@ pir_import_b <- function(year) {
   pir_data <- read_excel(filename, sheet = 2, skip = 1)
   pir_data <- pir_data |>
     mutate(pir_year = year) |>
-    select(pir_year, Region:City) |>
+    select(pir_year, Region:City, B.14) |>
     filter(Region != "Totals")
 }
 
@@ -121,3 +121,78 @@ pir_a |>
 
 ```
 
+#dual language learners 
+```{r} 
+pir_a |>
+  filter(State == "MA") |>
+  group_by(pir_year) |>
+  summarize(dual_lang_learners = sum(A.27),
+            total_child_enroll = sum(A.10.g),
+      percent_dual = dual_lang_learners / total_child_enroll * 100) |>
+  ggplot(aes(x = pir_year, y = percent_dual)) +
+  geom_line() +
+  scale_x_continuous(breaks = min(pir_a$pir_year):max(pir_a$pir_year)) +
+  scale_y_continuous(limits = c(0, 100)) +
+  labs(x = "Year", 
+       y = "% Enrolled Dual Language Learners", 
+       title = paste("Head Start PIR, MA,",
+                     min(pir_a$pir_year), 
+                     "-" , 
+                     max(pir_a$pir_year))) +
+  theme_minimal() 
+
+pir_a |>
+  filter(State == "MA") |>
+  group_by(pir_year, `Type`) |>
+  summarize(dual_lang_learners = sum(A.27),
+            total_child_enroll = sum(A.10.g),
+      percent_dual = dual_lang_learners / total_child_enroll * 100) |>
+  ggplot(aes(x = pir_year, y = percent_dual)) +
+  geom_line() +
+  facet_wrap(vars(`Type`)) +
+  scale_x_continuous(breaks = min(pir_a$pir_year):max(pir_a$pir_year)) +
+  labs(x = "Year", 
+       y = "% Enrolled Dual Language Learners", 
+       title = paste("Head Start PIR, MA,",
+                     min(pir_a$pir_year), 
+                     "-" , 
+                     max(pir_a$pir_year))) +
+  theme_minimal() 
+
+```
+
+#bilingual teachers
+```{r} 
+pir_b |>
+  filter(State == "MA") |>
+  group_by(pir_year) |>
+  summarize(bilingual_teachers = sum(B.14)) |>
+  ggplot(aes(x = pir_year, y = bilingual_teachers)) +
+  geom_line() +
+  scale_x_continuous(breaks = min(pir_a$pir_year):max(pir_a$pir_year)) +
+  scale_y_continuous(limits = c(0, 1000)) +
+  labs(x = "Year", 
+       y = "Number of Bilingual Teachers", 
+       title = paste("Head Start PIR, MA,",
+                     min(pir_a$pir_year), 
+                     "-" , 
+                     max(pir_a$pir_year))) +
+  theme_minimal() 
+
+pir_b |>
+  filter(State == "MA") |>
+  group_by(pir_year, `Type`) |>
+  summarize(bilingual_teachers = sum(B.14)) |>
+  ggplot(aes(x = pir_year, y = bilingual_teachers)) +
+  geom_line() +
+  facet_wrap(vars(`Type`)) +
+  scale_x_continuous(breaks = min(pir_a$pir_year):max(pir_a$pir_year)) +
+  labs(x = "Year", 
+       y = "Number of Bilingual Teachers", 
+       title = paste("Head Start PIR, MA,",
+                     min(pir_a$pir_year), 
+                     "-" , 
+                     max(pir_a$pir_year))) +
+  theme_minimal() 
+
+```
