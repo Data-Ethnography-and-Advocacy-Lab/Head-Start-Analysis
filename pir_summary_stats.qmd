@@ -163,14 +163,14 @@ pir_a |>
 
 #bilingual teachers
 ```{r} 
-pir_a |>
+pir_b |>
   filter(State == "MA") |>
   group_by(pir_year) |>
   summarize(bilingual_teachers = sum(B.14)) |>
   ggplot(aes(x = pir_year, y = bilingual_teachers)) +
   geom_line() +
   scale_x_continuous(breaks = min(pir_a$pir_year):max(pir_a$pir_year)) +
-  scale_y_continuous(limits = c(0, 100)) +
+  scale_y_continuous(limits = c(0, 1000)) +
   labs(x = "Year", 
        y = "Number of Bilingual Teachers", 
        title = paste("Head Start PIR, MA,",
@@ -179,10 +179,10 @@ pir_a |>
                      max(pir_a$pir_year))) +
   theme_minimal() 
 
-pir_a |>
+pir_b |>
   filter(State == "MA") |>
   group_by(pir_year, `Type`) |>
-  summarize(bilingual_teachers = sum(A.27)) |>
+  summarize(bilingual_teachers = sum(B.14)) |>
   ggplot(aes(x = pir_year, y = bilingual_teachers)) +
   geom_line() +
   facet_wrap(vars(`Type`)) +
