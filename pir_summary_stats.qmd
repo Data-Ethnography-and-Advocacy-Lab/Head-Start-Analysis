@@ -31,13 +31,14 @@ pir_import_b <- function(year) {
 }
 
 pir_import_c <- function(year) {
-  
   filename <- paste0("data/pir_export_", year, ".xlsx")
-  var
   pir_data <- read_excel(filename, sheet = 3, skip = 1)
   pir_data <- pir_data |>
     mutate(pir_year = year) |>
-    select(pir_year, Region:City, C.47, C.22, C.22.a, C.22.a.1) |>
+    select(pir_year, Region:City, C.47,C.22, C.22.a, C.22.a.1, C.22.b,
+           C.23.a, C.23.b, C.23.c, C.23.d,
+           C.24, C.24.a.2, C.24.b,
+           C.25, C.25.b) |>
     filter(Region != "Totals")
 }
 
@@ -46,7 +47,7 @@ year <- c(2021:2025)
 
 pir_a <- map_df(year, pir_import_a)
 pir_b <- map_df(year, pir_import_b)
-pir_c <- map_df(2025, pir_import_c)
+pir_c <- map_df(2023:2025, pir_import_c)
 
 ```
 
@@ -197,7 +198,9 @@ pir_b |>
 
 ```
 
-## Disability Enrollment in MA vs Other States
+# Disability Enrollment
+
+## In MA vs. Other States, 2025
 
 ```{r}
 pir_list <- list(pir_a, pir_b, pir_c)
@@ -212,4 +215,90 @@ combined_pir |>
       percent_disability = total_disability_enroll / total_child_enroll * 100) |>
   arrange(desc(percent_disability))
 
+```
+
+In 2025, Massachusetts is ranked 22nd for C.22 (The total number of children referred for an evaluation to determine eligibility under the Individuals with Disabilities Education Act (IDEA) during the program year) and 24th for C.22.a.1 (Of the children that received an evaluation, the number that were diagnosed with a disability under IDEA). Does this represent a lack of need or rather a lack of resources to get diagnosed?
+
+## Tracking Indicator 11
+
+```{r}
+# The number who received an evaluation to determine IDEA eligibility / The total number of children referred for an evaluation to determine eligibility under the Individuals with Disabilities Education Act (IDEA) during the program year
+
+combined_pir |> 
+  filter(pir_year == 2025, State == "MA") |> 
+  summarize(ratio = sum(C.22.a) / sum(C.22)) |> 
+  pull(ratio)
+```
+
+Indicator 11 from the Massachusetts Department of Elementary and Secondary Education is defined as the number of students with initial evaluation assessments completed within 30 school days divided by the number of students for whom parental consent for initial evaluations was received. From the years 2019-2023, Indicator 11 across the State were as follows:
+- FFY2019 — School Year 2019-2020: 97.28%
+- FFY2020 — School Year 2020-2021: 93.49%
+- FFY2021 — School Year 2021-2022: 88.38%
+- FFY2022 — School Year 2022-2023: 95.32%
+- FFY2023 — School Year 2023-2024: 85.75%
+
+Across Head Start programs, a somewhat analogous statistic on the number who received an evaluation to determine IDEA eligibility divided by the total number of children referred for an evaluation to determine eligibility under the Individuals with Disabilities Education Act (IDEA) during the program year was only 68.39%.
+
+# Evaluation "Waitlist" (Pending Evaluations)
+
+C.23.c counts children referred for an IDEA evaluation whose evaluation was still pending and not yet completed by the responsible agency at year end.
+
+## Pending Share of Referrals Over Time
+
+### All Head Start Programs
+
+```{r}
+options(scipen = 999)
+pir_c |>
+  filter(State == "MA") |>
+  group_by(pir_year) |>
+  summarize(referred = sum(C.22),
+            pending = sum(C.23.c),
+            percent_pending = pending / referred * 100) |>
+  ggplot(aes(x = pir_year, y = percent_pending)) +
+  geom_line() +
+  scale_x_continuous(breaks = min(pir_c$pir_year):max(pir_c$pir_year)) +
+  scale_y_continuous(limits = c(0, 30)) +
+  labs(x = "Year",
+       y = "% of Referred Children With Evaluation Pending",
+       title = "Head Start PIR, MA, 2023-2025") +
+  theme_minimal()
+```
+
+### By Program
+
+```{r}
+pir_c |>
+  filter(State == "MA") |>
+  group_by(pir_year, `Type`) |>
+  summarize(referred = sum(C.22),
+            pending = sum(C.23.c),
+            percent_pending = pending / referred * 100) |>
+  ggplot(aes(x = pir_year, y = percent_pending)) +
+  geom_line() +
+  facet_wrap(vars(`Type`)) +
+  scale_x_continuous(breaks = min(pir_c$pir_year):max(pir_c$pir_year)) +
+  labs(x = "Year",
+       y = "% of Referred Children With Evaluation Pending",
+       title = "Head Start PIR, MA, 2023-2025") +
+  theme_minimal()
+```
+## Pending as a Share of Non-Evaluations/Reasons for Non-Evaluation
+
+From 2023-2025 pending "Pending" has consistently been the largest single reason a referral goes unevaluated, but its share of non-evaluations fell from  roughly 64% in 2023 to 44% in 2025.
+
+```{r}
+pir_c |>
+  filter(State == "MA") |>
+  group_by(pir_year) |>
+  summarize("RTI assignment (C.23.a)" = sum(C.23.a),
+            "Parent refused (C.23.b)" = sum(C.23.b),
+            "Pending (C.23.c)" = sum(C.23.c),
+            "Other (C.23.d)" = sum(C.23.d),
+            "Unexplained" = sum(C.22.b) - sum(C.23.a + C.23.b + C.23.c + C.23.d),
+            "Total Not Evaluated (C.22.b)" = sum(C.22.b)) |>
+  pivot_longer(-pir_year,
+               names_to = "Reason for non-evaluation",
+               values_to = "n") |>
+  pivot_wider(names_from = pir_year, values_from = n)
 ```
