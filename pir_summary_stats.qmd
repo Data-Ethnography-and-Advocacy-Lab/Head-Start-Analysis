@@ -271,6 +271,23 @@ pir_b |>
 
 ```
 
+## Multilingual Non-Supervisory and Child Development Staff in MA vs Other States
+```{r}
+# MA is 6
+pir_b |>
+  filter(pir_year == 2025) |>
+  group_by(State) |>
+  summarize(bilingual_teachers_etc = sum(B.14, na.rm = TRUE),
+            total_preschool_classroom = sum(`B.3-1`, na.rm = TRUE),
+            total_preschool_asst = sum(`B.3-2`, na.rm = TRUE),
+            total_infant_toddler_teacher = sum(B.6, na.rm = TRUE),
+            total_home_visitor = sum(B.8, na.rm = TRUE),
+            total_FCC = sum(B.9, na.rm = TRUE),
+            denom = (total_preschool_classroom + total_preschool_asst + total_infant_toddler_teacher + total_home_visitor + total_FCC),
+            percent_bilingual_teachers_etc = bilingual_teachers_etc / denom * 100) |>
+  arrange(desc(percent_bilingual_teachers_etc))
+```
+
 
 ## Disability Enrollment in MA vs Other States
 
