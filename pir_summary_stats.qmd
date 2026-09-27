@@ -26,7 +26,7 @@ pir_import_b <- function(year) {
   pir_data <- read_excel(filename, sheet = 2, skip = 1)
   pir_data <- pir_data |>
     mutate(pir_year = year) |>
-    select(pir_year, Region:City, B.14) |>
+    select(pir_year, Region:City, B.14, `B.3-1`, `B.3-2`, B.6, B.8, B.9) |>
     filter(Region != "Totals")
 }
 
@@ -161,7 +161,21 @@ pir_a |>
 
 ```
 
-#bilingual teachers
+##DLL Enrollment in MA vs Other States
+```{r}
+pir_a |>
+  filter(pir_year == 2025) |>
+  group_by(State) |>
+  summarize(total_child_enroll = sum(A.10.g), 
+      total_dll_enroll = sum(A.27),
+      percent_dll = total_dll_enroll / total_child_enroll * 100) |>
+  arrange(desc(percent_dll))
+
+# MA is number 4, with 64.9% of students being dual language learners
+```
+
+
+# Bilingual Non Supervisory and Child Development Staff
 ```{r} 
 pir_b |>
   filter(State == "MA") |>
@@ -196,6 +210,64 @@ pir_b |>
   theme_minimal() 
 
 ```
+
+## Multi-lingual Non-Supervisory and Child Development Staff - Percentages
+
+To calculate these percentages, I divided the answers to question B.14 () by the sum totals of the answers to questions B.3-1, B.3-2, . This decision was based on , which includes a question B.15 called "Proficient in a Non-English Language". This question, "counts staff with a PIR Position of Classroom Teacher, Assistant Teacher, Home Visitor and FCC Provider. Any
+Classroom Teacher, Assistant Teacher, Home Visitor or FCC Provider who was Terminated and the Replaced checkbox is
+checked will NOT be counted in B.15-B.16." 
+
+This calculation relies on the assumptions that the process for calculating B.14 in 2025 is the same as the process for calculating B.15 in 2026, that the calculation processes for questions that these calculation was performed the same way at every Head Start agency. It also assumes that none of the above mentioned types of staff had multiple of the above titles, and that infant and toddler assistant teachers are not included in B.14, as they are not included in the race question directly before and no data is available in the PIR on the quantity of infant and toddler assistant teachers. 
+
+```{r}
+pir_b |>
+  filter(State == "MA") |>
+  group_by(pir_year) |>
+  summarize(bilingual_teachers_etc = sum(B.14, na.rm = TRUE),
+            total_preschool_classroom = sum(`B.3-1`, na.rm = TRUE),
+            total_preschool_asst = sum(`B.3-2`, na.rm = TRUE),
+            total_infant_toddler_teacher = sum(B.6, na.rm = TRUE),
+            total_home_visitor = sum(B.8, na.rm = TRUE),
+            total_FCC = sum(B.9, na.rm = TRUE),
+            denom = (total_preschool_classroom + total_preschool_asst + total_infant_toddler_teacher + total_home_visitor + total_FCC),
+            percent_bilingual_teachers_etc = bilingual_teachers_etc / denom * 100) |>
+  ggplot(aes(x = pir_year, y = percent_bilingual_teachers_etc)) +
+  geom_line() +
+  scale_x_continuous(breaks = min(pir_a$pir_year):max(pir_a$pir_year)) +
+  scale_y_continuous(limits = c(0, 100)) +
+  labs(x = "Year",
+       y = "Percent of Multilingual Non-Supervisory and Child Development Staff", 
+       title = paste("Head Start PIR, MA,",
+                     min(pir_a$pir_year), 
+                     "-" , 
+                     max(pir_a$pir_year))) +
+  theme_minimal()
+
+pir_b |>
+  filter(State == "MA") |>
+  group_by(pir_year, `Type`) |>
+  summarize(bilingual_teachers_etc = sum(B.14, na.rm = TRUE),
+            total_preschool_classroom = sum(`B.3-1`, na.rm = TRUE),
+            total_preschool_asst = sum(`B.3-2`, na.rm = TRUE),
+            total_infant_toddler_teacher = sum(B.6, na.rm = TRUE),
+            total_home_visitor = sum(B.8, na.rm = TRUE),
+            total_FCC = sum(B.9, na.rm = TRUE),
+            denom = (total_preschool_classroom + total_preschool_asst + total_infant_toddler_teacher + total_home_visitor + total_FCC),
+            percent_bilingual_teachers_etc = bilingual_teachers_etc / denom * 100) |>
+  ggplot(aes(x = pir_year, y = percent_bilingual_teachers_etc)) +
+  geom_line() +
+  facet_wrap(vars(`Type`)) +
+  scale_x_continuous(breaks = min(pir_a$pir_year):max(pir_a$pir_year)) +
+  labs(x = "Year", 
+       y = "Percent of Multilingual Non-Supervisory and Child Development Staff", 
+       title = paste("Head Start PIR, MA,",
+                     min(pir_a$pir_year), 
+                     "-" , 
+                     max(pir_a$pir_year))) +
+  theme_minimal() 
+
+```
+
 
 ## Disability Enrollment in MA vs Other States
 
