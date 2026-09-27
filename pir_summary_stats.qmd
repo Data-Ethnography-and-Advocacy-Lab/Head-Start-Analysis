@@ -213,7 +213,7 @@ pir_b |>
 
 ## Multi-lingual Non-Supervisory and Child Development Staff - Percentages
 
-To calculate these percentages, I divided the answers to question B.14 () by the sum totals of the answers to questions B.3-1, B.3-2, . This decision was based on , which includes a question B.15 called "Proficient in a Non-English Language". This question, "counts staff with a PIR Position of Classroom Teacher, Assistant Teacher, Home Visitor and FCC Provider. Any
+To calculate these percentages, I divided the answers to question B.14 by the sum totals of the answers to questions B.3-1, B.3-2, B.6, B.8, and B.9. This decision was based on the ChildPlus PIR Calculation Guide 2025-2026, which includes a question B.15 called "Proficient in a Non-English Language". This question, "counts staff with a PIR Position of Classroom Teacher, Assistant Teacher, Home Visitor and FCC Provider. Any
 Classroom Teacher, Assistant Teacher, Home Visitor or FCC Provider who was Terminated and the Replaced checkbox is
 checked will NOT be counted in B.15-B.16." 
 
@@ -243,6 +243,8 @@ pir_b |>
                      max(pir_a$pir_year))) +
   theme_minimal()
 
+#this graph has some very extreme changes for Migrant Head Start but there is only 1 Migrant HS compared to 24 EHS and 25 HS
+
 pir_b |>
   filter(State == "MA") |>
   group_by(pir_year, `Type`) |>
@@ -258,6 +260,7 @@ pir_b |>
   geom_line() +
   facet_wrap(vars(`Type`)) +
   scale_x_continuous(breaks = min(pir_a$pir_year):max(pir_a$pir_year)) +
+  scale_y_continuous(limits = c(0, 100)) +
   labs(x = "Year", 
        y = "Percent of Multilingual Non-Supervisory and Child Development Staff", 
        title = paste("Head Start PIR, MA,",
@@ -283,5 +286,4 @@ combined_pir |>
       total_disability_enroll = sum(C.22.a.1),
       percent_disability = total_disability_enroll / total_child_enroll * 100) |>
   arrange(desc(percent_disability))
-
 ```
