@@ -7,24 +7,15 @@ editor: source
 ```{r}
 library(tidyverse)
 library(readxl)
-
 ```
 
 ```{r}
 OS <- .Platform$OS.type
 
 if (OS == "unix"){
-  temp_path <- "~/Head-Start-Analysis/data/pir_export_" # MAC file path
-  HSa <-read_csv("~/Head-Start-Analysis/data/PIR_Export_2025.csv")
-  HSb <-read_csv("~/Head-Start-Analysis/data/PIR_Export_2025_B.csv")
-  HSc <-read_csv("~/Head-Start-Analysis/data/PIR_Export_2025_C.csv")
-  HSd <-read_csv("~/Head-Start-Analysis/data/PIR_Export_2025_D.csv")
+  temp_path <- "data/" # MAC file path
 } else if (OS == "windows"){
-  temp_path <- "..\\Head-Start-Analysis\\data\\pir_export_" # windows file path
-  HSa <-read_csv("..\\Head-Start-Analysis\\data\\PIR_Export_2025.csv")
-  HSb <-read_csv("..\\Head-Start-Analysis\\data\\PIR_Export_2025_B.csv")
-  HSc <-read_csv("..\\Head-Start-Analysis\\data\\PIR_Export_2025_C.csv")
-  HSd <-read_csv("..\\Head-Start-Analysis\\data\\PIR_Export_2025_D.csv")
+  temp_path <- "..\\Head-Start-Analysis\\data\\" # windows file path
 } else {
   print("ERROR: OS could not be identified")
 }
@@ -33,19 +24,9 @@ if (OS == "unix"){
 
 
 ```{r}
-
-df_list <- list(HSa,HSb, HSc,HSd)
-
-PIR_combined_df <- df_list |>
-  PIR_reduce(full_join, by = colnames(HSa)[1:10])
-PIR_combined_df <- clean_names(combined_df)
-
-
-
-
 pir_import_a <- function(year) {
   
-  filename <- paste0(temp_path, year, ".xlsx")
+  filename <- paste0(temp_path, "pir_export_", year, ".xlsx")
   var
   pir_data <- read_excel(filename, sheet = 1, skip = 1)
   pir_data <- pir_data |>
@@ -56,7 +37,7 @@ pir_import_a <- function(year) {
 
 pir_import_b <- function(year) {
   
-  filename <- paste0(temp_path, year, ".xlsx")
+  filename <- paste0(temp_path, "pir_export_", year, ".xlsx")
   var
   pir_data <- read_excel(filename, sheet = 2, skip = 1)
   pir_data <- pir_data |>
@@ -66,7 +47,7 @@ pir_import_b <- function(year) {
 }
 
 pir_import_c <- function(year) {
-  filename <- paste0(temp_path, year, ".xlsx")
+  filename <- paste0(temp_path, "pir_export_", year, ".xlsx")
   pir_data <- read_excel(filename, sheet = 3, skip = 1)
   pir_data <- pir_data |>
     mutate(pir_year = year) |>
@@ -83,6 +64,12 @@ year <- c(2021:2025)
 pir_a <- map_df(year, pir_import_a)
 pir_b <- map_df(year, pir_import_b)
 pir_c <- map_df(2023:2025, pir_import_c)
+
+pir_list <- list(pir_a, pir_b, pir_c)
+combined_pir <- pir_list |>
+  reduce(full_join, by = colnames(pir_a)[1:9])
+
+ed_homeless <- read_csv(paste0(temp_path, "ed_express_homeless_21_24.csv"))
 
 ```
 
@@ -238,10 +225,6 @@ pir_b |>
 ## In MA vs. Other States, 2025
 
 ```{r}
-pir_list <- list(pir_a, pir_b, pir_c)
-combined_pir <- pir_list |>
-  reduce(full_join, by = colnames(pir_a)[1:9])
-  
 combined_pir |>
   filter(pir_year == 2025) |>
   group_by(State) |>
