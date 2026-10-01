@@ -221,6 +221,11 @@ combined_pir |>
 library(tidycensus)
 library(purrr)
 
+variables <- load_variables(2024, "acs5")
+```
+
+
+```{r}
 years <- lst(2024, 2020, 2016, 2012, 2008)
 
 langhome <- map_dfr(
