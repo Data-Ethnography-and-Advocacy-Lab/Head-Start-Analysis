@@ -1,0 +1,74 @@
+---
+title: "MA Head Start Homelessness Data Brief"
+subtitle: "Data Ethnography and Advocacy Lab, 2026"
+author: "FILL"
+format: 
+  revealjs:
+    scrollable: true
+    df-print: paged
+    theme: [default]
+    incremental: true
+    chalkboard:
+      theme: whiteboard
+      boardmarker-width: 5
+editor: source
+execute:
+  echo: false
+  messages: false
+  warnings: false
+---
+
+
+```{r}
+library(tidyverse)
+
+source("pir_source.R")
+source("homeless_source.R")
+```
+
+```{r}
+options(scipen = 999)
+combined_pir |>
+  mutate(is_ma = case_when(State == "MA" ~ "MA",
+                           State != "MA" ~ "Other States")) |>
+  group_by(pir_year, is_ma) |>
+  summarize(homeless_children = sum(C.48, na.rm = TRUE),
+            total_child_enroll = sum(A.10.g, na.rm = TRUE),
+      percent_homeless = homeless_children / total_child_enroll * 100) |>
+  ggplot(aes(x = pir_year, y = percent_homeless, col = is_ma, group = is_ma)) +
+  geom_line() +
+  scale_x_continuous(breaks = min(combined_pir$pir_year):max(combined_pir$pir_year)) +
+  scale_y_continuous() +
+  labs(x = "Year", 
+       y = "% Enrolled Homeless Children",
+       col = "",
+       title = paste("Head Start PIR, MA,",
+                     min(combined_pir$pir_year), 
+                     "-" , 
+                     max(combined_pir$pir_year))) +
+  theme_minimal() 
+
+```
+
+---
+
+```{r}
+pir_a |>
+  filter(State == "MA") |>
+  group_by(pir_year, `Type`) |>
+  summarize(homeless_children = sum(C.48),
+            total_child_enroll = sum(A.10.g),
+      percent_homeless = homeless_children / total_child_enroll * 100) |>
+  ggplot(aes(x = pir_year, y = percent_homeless)) +
+  geom_line() +
+  facet_wrap(vars(`Type`)) +
+  scale_x_continuous(breaks = min(pir_a$pir_year):max(pir_a$pir_year)) +
+  labs(x = "Year", 
+       y = "% Enrolled Homeless Children", 
+       title = paste("Head Start PIR, MA,",
+                     min(pir_a$pir_year), 
+                     "-" , 
+                     max(pir_a$pir_year))) +
+  theme_minimal()
+```
+
