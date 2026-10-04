@@ -332,23 +332,22 @@ ma_pums_recoded <- get_pums(
 ```
 ```{r}
 ma_pums_recoded |>
-  filter(OCCP == 2300) |>
+  filter(OCCP == 2300 | OCCP == 4600) |>
   group_by(LANX_label) |>
-  summarize(percent = n() / 319 * 100) |>
+  summarize(percent = n() / 623 * 100) |>
   ggplot(aes(x = LANX_label,
              y = percent)) + 
-  geom_col() +
+  geom_col(na.rm = TRUE) +
   scale_y_continuous(limits = c(0, 100)) +
   labs(x = "",
-       y = "Percent of Teachers",
-       title = "Pre-K and Kindergarten Teacher Languages in MA") +
-  theme_minimal()
+       y = "Percent of Teachers/Childcare Workers",
+       title = "Childcare Workers, Pre-K & Kindergarten Teacher Languages in MA") +
+  theme_minimal() +
+  theme(title = element_text(size = 9))
 ```
-
 ```{r}
-ma_pums_multilingual <- ma_pums_recoded
-
-# how many multilingual ppl are early educators vs other professions
+ma_pums_recoded |>
+  filter(LANX != "b") |>
+  group_by(LANX_label) |>
+  summarize(percent = n() / 74617 * 100)
 ```
-
-
