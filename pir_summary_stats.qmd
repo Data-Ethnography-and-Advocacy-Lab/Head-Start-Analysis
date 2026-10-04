@@ -343,11 +343,12 @@ ma_pums_recoded |>
        y = "Percent of Teachers",
        title = "Pre-K and Kindergarten Teacher Languages in MA") +
   theme_minimal()
-  
 ```
 
 ```{r}
 ma_pums_multilingual <- ma_pums_recoded
+
+# how many multilingual ppl are early educators vs other professions
 ```
 
 
