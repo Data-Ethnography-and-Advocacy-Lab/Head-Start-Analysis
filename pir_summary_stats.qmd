@@ -224,19 +224,17 @@ library(purrr)
 variables <- load_variables(2024, "acs5")
 ```
 
-
 ```{r}
-years <- lst(2024, 2020, 2016, 2012, 2008)
+years <- list(2024, 2020, 2016, 2012)
 
 langhome <- map_dfr(
   years,
   ~ get_acs(
     geography = "us", 
-    variables = "B16001", 
+    variables = "B16001_002", 
     year = .x, 
     survey = "acs5"),
   .id = "year")
 
 head(langhome)
 ```
-
