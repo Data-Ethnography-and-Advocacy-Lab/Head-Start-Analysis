@@ -308,3 +308,46 @@ combined_pir |>
       percent_disability = total_disability_enroll / total_child_enroll * 100) |>
   arrange(desc(percent_disability))
 ```
+
+## Multilingual Teachers Census Data
+```{r}
+library(tidycensus)
+library(purrr)
+```
+```{r}
+pums_vars_2024 <- pums_variables |>
+  filter(year == 2024, survey == "acs1")
+
+pums_vars_2024 |>
+  distinct(var_code, var_label, data_type, level)
+```
+```{r}
+ma_pums_recoded <- get_pums(
+  variables = c("OCCP", "LANX"),
+  state = "MA",
+  survey = "acs1",
+  year = 2024,
+  recode = TRUE
+  )
+```
+```{r}
+ma_pums_recoded |>
+  filter(OCCP == 2300) |>
+  group_by(LANX_label) |>
+  summarize(percent = n() / 319 * 100) |>
+  ggplot(aes(x = LANX_label,
+             y = percent)) + 
+  geom_col() +
+  scale_y_continuous(limits = c(0, 100)) +
+  labs(x = "",
+       y = "Percent of Teachers",
+       title = "Pre-K and Kindergarten Teacher Languages in MA") +
+  theme_minimal()
+  
+```
+
+```{r}
+ma_pums_multilingual <- ma_pums_recoded
+```
+
+
