@@ -407,6 +407,139 @@ Across Head Start programs, a somewhat analogous statistic on the number who rec
 
 C.23.c counts children referred for an IDEA evaluation whose evaluation was still pending and not yet completed by the responsible agency at year end.
 
+```
+
+## loading census data to calculate the number of bilingual households over time in the us
+```{r}
+#install.packages("tidycensus")
+#install.packages("purrr")
+#install.packages("scales")
+library(tidycensus)
+library(purrr)
+library(dplyr)
+library(ggplot2)
+library(scales)
+
+variables <- load_variables(2024, "acs5")
+
+years <- list(2024, 2020, 2016, 2012)
+
+english_only_pop <- map_dfr(
+  years,
+  ~ get_acs(
+    geography = "us", 
+    variables = "B16001_002", 
+    year = .x, 
+    survey = "acs5"),
+  .id = "year")
+
+total_pop <- map_dfr(
+  years,
+  ~ get_acs(
+    geography = "us", 
+    variables = "B16001_001", 
+    year = .x, 
+    survey = "acs5"),
+  .id = "year")
+```
+
+## calculating and graphing number of bilingual households over time in the us
+```{r}
+bilingual_pop <- english_only_pop |>
+  left_join(
+    total_pop|>
+      select(year, GEOID, NAME, totalpop = estimate),
+    by = c("year", "GEOID", "NAME"))
+
+bilingual_pop <- bilingual_pop |>
+  mutate(bilingualpop = totalpop-estimate)
+
+bilingual_pop <- bilingual_pop |>
+  mutate(percent_bilingual = bilingualpop / totalpop * 100)
+
+bilingual_pop$year <- as.integer(bilingual_pop$year)
+bilingual_pop[1, "year"] <- as.integer(2024)
+bilingual_pop[2, "year"] <- as.integer(2020)
+bilingual_pop[3, "year"] <- as.integer(2016)
+bilingual_pop[4, "year"] <- as.integer(2012)
+
+ggplot(bilingual_pop, aes(x = year, y = bilingualpop)) +
+  geom_line() +
+  scale_x_continuous(breaks = min(bilingual_pop$year):max(bilingual_pop$year)) +
+  scale_y_continuous(labels = label_number(scale_cut = cut_short_scale())) +
+  labs(x = "Year",
+       y = "Bilingual Population in the United States",
+       title = paste("Total Bilingual Population, United States,",
+                     min(bilingual_pop$year), 
+                     "-" , 
+                     max(bilingual_pop$year))) +
+  theme_minimal() 
+
+ggplot(bilingual_pop, aes(x = year, y = percent_bilingual)) +
+  geom_line() + scale_x_continuous(breaks = min(bilingual_pop$year):max(bilingual_pop$year)) +
+  labs(x = "Year", 
+       y = "% of the Population that is Bilingual") +
+  theme_minimal() 
+```
+
+```{r}
+english_only_pop_ma <- map_dfr(
+  years,
+  ~ get_acs(
+    geography = "state", 
+    state = "MA",
+    variables = "B16001_002", 
+    year = .x, 
+    survey = "acs5"),
+  .id = "year")
+
+total_pop_ma <- map_dfr(
+  years,
+  ~ get_acs(
+    geography = "state", 
+    state = "MA",
+    variables = "B16001_001", 
+    year = .x, 
+    survey = "acs5"),
+  .id = "year")
+
+bilingual_pop_ma <- english_only_pop_ma |>
+  left_join(
+    total_pop_ma|>
+      select(year, GEOID, NAME, totalpop = estimate),
+    by = c("year", "GEOID", "NAME"))
+
+bilingual_pop_ma <- bilingual_pop_ma |>
+  mutate(bilingualpop = totalpop-estimate)
+
+bilingual_pop_ma <- bilingual_pop_ma |>
+  mutate(percent_bilingual = bilingualpop / totalpop * 100)
+
+bilingual_pop_ma$year <- as.integer(bilingual_pop_ma$year)
+bilingual_pop_ma[1, "year"] <- as.integer(2024)
+bilingual_pop_ma[2, "year"] <- as.integer(2020)
+bilingual_pop_ma[3, "year"] <- as.integer(2016)
+bilingual_pop_ma[4, "year"] <- as.integer(2012)
+
+ggplot(bilingual_pop_ma, aes(x = year, y = bilingualpop)) +
+  geom_line() +
+  scale_x_continuous(breaks = min(bilingual_pop_ma$year):max(bilingual_pop_ma$year)) +
+  scale_y_continuous(labels = label_number(scale_cut = cut_short_scale())) +
+  labs(x = "Year",
+       y = "Bilingual Population in MA",
+       title = paste("Total Bilingual Population, MA,",
+                     min(bilingual_pop_ma$year), 
+                     "-" , 
+                     max(bilingual_pop_ma$year))) +
+  theme_minimal() 
+
+ggplot(bilingual_pop_ma, aes(x = year, y = percent_bilingual)) +
+  geom_line() + scale_x_continuous(breaks = min(bilingual_pop_ma$year):max(bilingual_pop_ma$year)) +
+  labs(x = "Year", 
+       y = "% of MA Population that is Bilingual") +
+  theme_minimal() 
+```
+
 ## Pending Share of Referrals Over Time
 
 ### All Head Start Programs
