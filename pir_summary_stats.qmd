@@ -301,6 +301,7 @@ pir_c |>
        title = "Head Start PIR, MA, 2023-2025") +
   theme_minimal()
 ```
+
 ## Pending as a Share of Non-Evaluations/Reasons for Non-Evaluation
 
 From 2023-2025 pending "Pending" has consistently been the largest single reason a referral goes unevaluated, but its share of non-evaluations fell from  roughly 64% in 2023 to 44% in 2025.
@@ -319,4 +320,42 @@ pir_c |>
                names_to = "Reason for non-evaluation",
                values_to = "n") |>
   pivot_wider(names_from = pir_year, values_from = n)
+```
+
+# Children with IEPs/IFSPs Not Receiving Services
+
+### Children with IEPs
+
+```{r}
+options(scipen = 999)
+pir_c |>
+  filter(State == "MA") |>
+  group_by(pir_year) |>
+  summarize(not_receiving_IEP = sum(C.24.b, na.rm = TRUE)) |>
+  ggplot(aes(x = pir_year, y = not_receiving_IEP)) +
+  geom_line() +
+  scale_x_continuous(breaks = min(pir_c$pir_year):max(pir_c$pir_year)) +
+  scale_y_continuous(limits = c(0, 45)) +
+  labs(x = "Year",
+       y = "# Children with IEP Not Receiving Services",
+       title = "Head Start PIR, MA, 2023-2025") +
+  theme_minimal()
+```
+
+### Children with IFSPs
+
+```{r}
+options(scipen = 999)
+pir_c |>
+  filter(State == "MA") |>
+  group_by(pir_year) |>
+  summarize(not_receiving_IEP = sum(C.25.b, na.rm = TRUE)) |>
+  ggplot(aes(x = pir_year, y = not_receiving_IEP)) +
+  geom_line() +
+  scale_x_continuous(breaks = min(pir_c$pir_year):max(pir_c$pir_year)) +
+  scale_y_continuous(limits = c(0, 5)) +
+  labs(x = "Year",
+       y = "# Children with IEP Not Receiving Services",
+       title = "Head Start PIR, MA, 2023-2025") +
+  theme_minimal()
 ```
