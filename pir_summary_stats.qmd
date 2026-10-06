@@ -42,7 +42,7 @@ pir_import_b <- function(year) {
   pir_data <- read_excel(filename, sheet = 2, skip = 1)
   pir_data <- pir_data |>
     mutate(pir_year = year) |>
-    select(pir_year, Region:City, B.14) |>
+    select(pir_year, Region:City, B.14, `B.3-1`, `B.3-2`, B.6, B.8, B.9) |>
     filter(Region != "Totals")
 }
 
@@ -194,7 +194,21 @@ pir_a |>
 
 ```
 
-#bilingual teachers
+##DLL Enrollment in MA vs Other States
+```{r}
+pir_a |>
+  filter(pir_year == 2025) |>
+  group_by(State) |>
+  summarize(total_child_enroll = sum(A.10.g), 
+      total_dll_enroll = sum(A.27),
+      percent_dll = total_dll_enroll / total_child_enroll * 100) |>
+  arrange(desc(percent_dll))
+
+# MA is number 4, with 64.9% of students being dual language learners
+```
+
+
+# Bilingual Non Supervisory and Child Development Staff
 ```{r} 
 pir_b |>
   filter(State == "MA") |>
@@ -205,12 +219,13 @@ pir_b |>
   scale_x_continuous(breaks = min(pir_a$pir_year):max(pir_a$pir_year)) +
   scale_y_continuous(limits = c(0, 1000)) +
   labs(x = "Year", 
-       y = "Number of Bilingual Teachers", 
+       y = "Multilingual Teachers, Home Visitors, & FCC Staff", 
        title = paste("Head Start PIR, MA,",
                      min(pir_a$pir_year), 
                      "-" , 
                      max(pir_a$pir_year))) +
-  theme_minimal() 
+  theme_minimal() +
+  theme(axis.title.y = element_text(size = 10))
 
 pir_b |>
   filter(State == "MA") |>
@@ -221,18 +236,97 @@ pir_b |>
   facet_wrap(vars(`Type`)) +
   scale_x_continuous(breaks = min(pir_a$pir_year):max(pir_a$pir_year)) +
   labs(x = "Year", 
-       y = "Number of Bilingual Teachers", 
+       y = "Multilingual Teachers, Home Visitors, & FCC Staff", 
        title = paste("Head Start PIR, MA,",
                      min(pir_a$pir_year), 
                      "-" , 
                      max(pir_a$pir_year))) +
-  theme_minimal() 
+  theme_minimal() +
+  theme(axis.title.y = element_text(size = 10))
 
 ```
 
-# Disability Enrollment
+## Multi-lingual Non-Supervisory and Child Development Staff - Percentages
 
-## In MA vs. Other States, 2025
+To calculate these percentages, I divided the answers to question B.14 by the sum totals of the answers to questions B.3-1, B.3-2, B.6, B.8, and B.9. This decision was based on the ChildPlus PIR Calculation Guide 2025-2026, which includes a question B.15 called "Proficient in a Non-English Language". This question, "counts staff with a PIR Position of Classroom Teacher, Assistant Teacher, Home Visitor and FCC Provider. Any
+Classroom Teacher, Assistant Teacher, Home Visitor or FCC Provider who was Terminated and the Replaced checkbox is
+checked will NOT be counted in B.15-B.16." 
+
+This calculation relies on the assumptions that the process for calculating B.14 in 2025 is the same as the process for calculating B.15 in 2026, that the calculation processes for questions that these calculation was performed the same way at every Head Start agency. It also assumes that none of the above mentioned types of staff had multiple of the above titles, and that infant and toddler assistant teachers are not included in B.14, as they are not included in the race question directly before and no data is available in the PIR on the quantity of infant and toddler assistant teachers. 
+
+```{r}
+pir_b |>
+  filter(State == "MA") |>
+  group_by(pir_year) |>
+  summarize(bilingual_teachers_etc = sum(B.14, na.rm = TRUE),
+            total_preschool_classroom = sum(`B.3-1`, na.rm = TRUE),
+            total_preschool_asst = sum(`B.3-2`, na.rm = TRUE),
+            total_infant_toddler_teacher = sum(B.6, na.rm = TRUE),
+            total_home_visitor = sum(B.8, na.rm = TRUE),
+            total_FCC = sum(B.9, na.rm = TRUE),
+            denom = (total_preschool_classroom + total_preschool_asst + total_infant_toddler_teacher + total_home_visitor + total_FCC),
+            percent_bilingual_teachers_etc = bilingual_teachers_etc / denom * 100) |>
+  ggplot(aes(x = pir_year, y = percent_bilingual_teachers_etc)) +
+  geom_line() +
+  scale_x_continuous(breaks = min(pir_a$pir_year):max(pir_a$pir_year)) +
+  scale_y_continuous(limits = c(0, 100)) +
+  labs(x = "Year",
+       y = "Percent of Multilingual Teachers, Home Visitors, & FCC Staff", 
+       title = paste("Head Start PIR, MA,",
+                     min(pir_a$pir_year), 
+                     "-" , 
+                     max(pir_a$pir_year))) +
+  theme_minimal() +
+  theme(axis.title.y = element_text(size = 8))
+
+#this graph has some very extreme changes for Migrant Head Start but there is only 1 Migrant HS compared to 24 EHS and 25 HS
+
+pir_b |>
+  filter(State == "MA") |>
+  group_by(pir_year, `Type`) |>
+  summarize(bilingual_teachers_etc = sum(B.14, na.rm = TRUE),
+            total_preschool_classroom = sum(`B.3-1`, na.rm = TRUE),
+            total_preschool_asst = sum(`B.3-2`, na.rm = TRUE),
+            total_infant_toddler_teacher = sum(B.6, na.rm = TRUE),
+            total_home_visitor = sum(B.8, na.rm = TRUE),
+            total_FCC = sum(B.9, na.rm = TRUE),
+            denom = (total_preschool_classroom + total_preschool_asst + total_infant_toddler_teacher + total_home_visitor + total_FCC),
+            percent_bilingual_teachers_etc = bilingual_teachers_etc / denom * 100) |>
+  ggplot(aes(x = pir_year, y = percent_bilingual_teachers_etc)) +
+  geom_line() +
+  facet_wrap(vars(`Type`)) +
+  scale_x_continuous(breaks = min(pir_a$pir_year):max(pir_a$pir_year)) +
+  scale_y_continuous(limits = c(0, 100)) +
+  labs(x = "Year", 
+       y = "Percent of Multilingual Teachers, Home Visitors, & FCC Staff", 
+       title = paste("Head Start PIR, MA,",
+                     min(pir_a$pir_year), 
+                     "-" , 
+                     max(pir_a$pir_year))) +
+  theme_minimal() +
+  theme(axis.title.y = element_text(size = 8))
+
+```
+
+## Multilingual Non-Supervisory and Child Development Staff in MA vs Other States
+```{r}
+# MA is 6
+pir_b |>
+  filter(pir_year == 2025) |>
+  group_by(State) |>
+  summarize(bilingual_teachers_etc = sum(B.14, na.rm = TRUE),
+            total_preschool_classroom = sum(`B.3-1`, na.rm = TRUE),
+            total_preschool_asst = sum(`B.3-2`, na.rm = TRUE),
+            total_infant_toddler_teacher = sum(B.6, na.rm = TRUE),
+            total_home_visitor = sum(B.8, na.rm = TRUE),
+            total_FCC = sum(B.9, na.rm = TRUE),
+            denom = (total_preschool_classroom + total_preschool_asst + total_infant_toddler_teacher + total_home_visitor + total_FCC),
+            percent_bilingual_teachers_etc = bilingual_teachers_etc / denom * 100) |>
+  arrange(desc(percent_bilingual_teachers_etc))
+```
+
+
+## Disability Enrollment in MA vs Other States
 
 ```{r}
 combined_pir |>
@@ -242,7 +336,49 @@ combined_pir |>
       total_disability_enroll = sum(C.22.a.1),
       percent_disability = total_disability_enroll / total_child_enroll * 100) |>
   arrange(desc(percent_disability))
+```
 
+## Multilingual Teachers Census Data
+```{r}
+library(tidycensus)
+library(purrr)
+```
+```{r}
+pums_vars_2024 <- pums_variables |>
+  filter(year == 2024, survey == "acs1")
+
+pums_vars_2024 |>
+  distinct(var_code, var_label, data_type, level)
+```
+```{r}
+ma_pums_recoded <- get_pums(
+  variables = c("OCCP", "LANX"),
+  state = "MA",
+  survey = "acs1",
+  year = 2024,
+  recode = TRUE
+  )
+```
+```{r}
+ma_pums_recoded |>
+  filter(OCCP == 2300 | OCCP == 4600) |>
+  group_by(LANX_label) |>
+  summarize(percent = n() / 623 * 100) |>
+  ggplot(aes(x = LANX_label,
+             y = percent)) + 
+  geom_col(na.rm = TRUE) +
+  scale_y_continuous(limits = c(0, 100)) +
+  labs(x = "",
+       y = "Percent of Teachers/Childcare Workers",
+       title = "Childcare Workers, Pre-K & Kindergarten Teacher Languages in MA") +
+  theme_minimal() +
+  theme(title = element_text(size = 9))
+```
+```{r}
+ma_pums_recoded |>
+  filter(LANX != "b") |>
+  group_by(LANX_label) |>
+  summarize(percent = n() / 74617 * 100)
 ```
 
 In 2025, Massachusetts is ranked 22nd for C.22 (The total number of children referred for an evaluation to determine eligibility under the Individuals with Disabilities Education Act (IDEA) during the program year) and 24th for C.22.a.1 (Of the children that received an evaluation, the number that were diagnosed with a disability under IDEA). Does this represent a lack of need or rather a lack of resources to get diagnosed?
