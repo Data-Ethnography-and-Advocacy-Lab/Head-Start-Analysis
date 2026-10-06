@@ -407,9 +407,9 @@ Across Head Start programs, a somewhat analogous statistic on the number who rec
 
 C.23.c counts children referred for an IDEA evaluation whose evaluation was still pending and not yet completed by the responsible agency at year end.
 
-```
 
 ## loading census data to calculate the number of bilingual households over time in the us
+
 ```{r}
 #install.packages("tidycensus")
 #install.packages("purrr")
@@ -479,7 +479,8 @@ ggplot(bilingual_pop, aes(x = year, y = percent_bilingual)) +
   geom_line() + scale_x_continuous(breaks = min(bilingual_pop$year):max(bilingual_pop$year)) +
   labs(x = "Year", 
        y = "% of the Population that is Bilingual") +
-  theme_minimal() 
+  theme_minimal()  +
+  scale_x_continuous(breaks = c(2008, 2012, 2016, 2020, 2024))
 ```
 
 ```{r}
