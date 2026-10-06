@@ -107,17 +107,19 @@ pir_a |>
 ```{r}
 options(scipen = 999)
 pir_a |>
-  filter(State == "MA") |>
-  group_by(pir_year) |>
-  summarize(homeless_children = sum(A.13.d),
-            total_child_enroll = sum(A.10.g),
+  mutate(is_ma = case_when(State == "MA" ~ "MA",
+                           State != "MA" ~ "Other States")) |>
+  group_by(pir_year, is_ma) |>
+  summarize(homeless_children = sum(A.13.d, na.rm = TRUE),
+            total_child_enroll = sum(A.10.g, na.rm = TRUE),
       percent_homeless = homeless_children / total_child_enroll * 100) |>
-  ggplot(aes(x = pir_year, y = percent_homeless)) +
+  ggplot(aes(x = pir_year, y = percent_homeless, col = is_ma, group = is_ma)) +
   geom_line() +
   scale_x_continuous(breaks = min(pir_a$pir_year):max(pir_a$pir_year)) +
-  scale_y_continuous(limits = c(0, 15)) +
+  scale_y_continuous() +
   labs(x = "Year", 
-       y = "% Enrolled Homeless Children", 
+       y = "% Enrolled Homeless Children",
+       col = "",
        title = paste("Head Start PIR, MA,",
                      min(pir_a$pir_year), 
                      "-" , 
@@ -146,6 +148,14 @@ pir_a |>
 
 #dual language learners 
 ```{r} 
+pir_a |>
+  filter(pir_year == 2025) |>
+  group_by(State) |>
+  summarize(total_child_enroll = sum(A.10.g), 
+      dll_enroll = sum(A.27),
+      percent_dll = dll_enroll / total_child_enroll * 100) |>
+  arrange(desc(percent_dll))
+
 pir_a |>
   filter(State == "MA") |>
   group_by(pir_year) |>
