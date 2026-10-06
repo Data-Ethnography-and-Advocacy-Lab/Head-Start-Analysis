@@ -23,7 +23,6 @@ child_pop <- read_excel(paste0(temp_path, "child_pop_state_age.xlsx"), .name_rep
 
 hs_homeless_by_state <-
   combined_pir |>
-  filter(pir_year != 2021 & pir_year != 2022) |>
   group_by(pir_year, State) |>
   summarize(TOTAL_HS_ENROLL = sum(A.10.g, na.rm = TRUE), 
             TOTAL_HS_HOMELESS_ENROLL = sum(C.48, na.rm = TRUE),
@@ -56,14 +55,14 @@ ed_homeless_char <- ed_homeless |>
          YEAR_END = as.numeric(YEAR_END))
 
 
-ed_totals_21 <- read_csv(paste0(temp_path, "ccd_sea_052_2122_l_1a_071722.csv"))
-ed_totals_22 <- read_csv(paste0(temp_path, "ccd_sea_052_2223_l_1a_083023.csv"))
-ed_totals_23 <- read_csv(paste0(temp_path, "ccd_sea_052_2324_l_1a_073124.csv"))
-ed_totals_24 <- read_csv(paste0(temp_path, "ccd_sea_052_2425_l_1a_073025.csv"))
-ed_totals_grade_1 <- rbind(ed_totals_21, 
-                           ed_totals_22, 
+ed_totals_22 <- read_csv(paste0(temp_path, "ccd_sea_052_2122_l_1a_071722.csv"))
+ed_totals_23 <- read_csv(paste0(temp_path, "ccd_sea_052_2223_l_1a_083023.csv"))
+ed_totals_24 <- read_csv(paste0(temp_path, "ccd_sea_052_2324_l_1a_073124.csv"))
+ed_totals_25 <- read_csv(paste0(temp_path, "ccd_sea_052_2425_l_1a_073025.csv"))
+ed_totals_grade_1 <- rbind(ed_totals_22, 
                            ed_totals_23, 
-                           ed_totals_24) |>
+                           ed_totals_24, 
+                           ed_totals_25) |>
   filter(GRADE == "Grade 1" & TOTAL_INDICATOR == "Subtotal 4 - By Grade") |>
   left_join(ed_homeless_grade_1, by = c("SCHOOL_YEAR" = "School.Year", "STATENAME" = "State" )) |>
   mutate(Value = as.numeric(Value),
@@ -93,7 +92,7 @@ ed_totals_under_5_char <- ed_totals_under_5 |>
   left_join(ed_homeless_char |> select(2, 5, 7, 8), by = c("STATENAME" = "State", "YEAR_END" = "YEAR_END")) |>
   mutate(TOTAL_CHAR_UNDER_5 = HOMELESS_UNDER_5_GRADE_1 * PERCENT_CHAR_ST_YR)
 
-rm(ed_totals_21, ed_totals_22, ed_totals_23, ed_totals_24, child_pop)
+rm(ed_totals_22, ed_totals_23, ed_totals_24, ed_totals_25, child_pop)
 
 #Child Population Statistics: https://datacenter.aecf.org/data/tables/100-child-population-by-single-age?loc=1&loct=1#detailed/1/any/false/1096/42,43,44,45/418
 

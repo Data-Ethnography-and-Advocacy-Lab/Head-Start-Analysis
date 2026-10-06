@@ -38,11 +38,23 @@ pir_import_c <- function(year) {
   pir_data <- read_excel(filename, sheet = 3, skip = 1)
   pir_data <- pir_data |>
     mutate(pir_year = year) |>
-    select(pir_year, Region:City, C.47, C.48, C.22, C.22.a, C.22.a.1, C.22.b,
-           C.23.a, C.23.b, C.23.c, C.23.d,
-           C.24, C.24.a.2, C.24.b,
-           C.25, C.25.b) |>
     filter(Region != "Totals")
+  
+  if(year %in% c(2021:2022)) {
+    pir_data <-
+      pir_data |>
+      select(-C.48) |>
+      rename(C.48 = C.47,
+             C.47 = C.46)
+  }   
+  
+  pir_data <-
+    pir_data |>
+    select(pir_year, Region:City, C.47, C.48) 
+           #C.22, C.22.a, C.22.a.1, C.22.b,
+           #C.23.a, C.23.b, C.23.c, C.23.d,
+           #C.24, C.24.a.2, C.24.b,
+           #C.25, C.25.b)
 }
 
 year <- c(2021:2025)
@@ -50,7 +62,7 @@ year <- c(2021:2025)
 
 pir_a <- map_df(year, pir_import_a)
 pir_b <- map_df(year, pir_import_b)
-pir_c <- map_df(2023:2025, pir_import_c)
+pir_c <- map_df(year, pir_import_c)
 
 pir_list <- list(pir_a, pir_b, pir_c)
 combined_pir <- pir_list |>

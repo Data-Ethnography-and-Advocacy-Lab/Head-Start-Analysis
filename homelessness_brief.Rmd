@@ -21,6 +21,7 @@ execute:
 
 ```{r}
 library(tidyverse)
+library(ggrepel)
 
 source("pir_source.R")
 source("homeless_source.R")
@@ -32,6 +33,7 @@ combined_pir |>
   mutate(is_ma = case_when(State == "MA" ~ "MA",
                            State != "MA" ~ "Other States")) |>
   group_by(pir_year, is_ma) |>
+  filter(!is.na(is_ma)) |>
   summarize(homeless_children = sum(C.48, na.rm = TRUE),
             total_child_enroll = sum(A.10.g, na.rm = TRUE),
       percent_homeless = homeless_children / total_child_enroll * 100) |>
@@ -46,14 +48,16 @@ combined_pir |>
                      min(combined_pir$pir_year), 
                      "-" , 
                      max(combined_pir$pir_year))) +
-  theme_minimal() 
+  theme_minimal()  +
+  geom_text(aes(label = round(percent_homeless, 2)), 
+            vjust = -0.25)
 
 ```
 
 ---
 
 ```{r}
-pir_a |>
+combined_pir |>
   filter(State == "MA") |>
   group_by(pir_year, `Type`) |>
   summarize(homeless_children = sum(C.48),
@@ -62,13 +66,166 @@ pir_a |>
   ggplot(aes(x = pir_year, y = percent_homeless)) +
   geom_line() +
   facet_wrap(vars(`Type`)) +
-  scale_x_continuous(breaks = min(pir_a$pir_year):max(pir_a$pir_year)) +
+  scale_x_continuous(breaks = min(combined_pir$pir_year):max(combined_pir$pir_year)) +
   labs(x = "Year", 
        y = "% Enrolled Homeless Children", 
        title = paste("Head Start PIR, MA,",
-                     min(pir_a$pir_year), 
+                     min(combined_pir$pir_year), 
                      "-" , 
-                     max(pir_a$pir_year))) +
-  theme_minimal()
+                     max(combined_pir$pir_year))) +
+  theme_minimal()  +
+  geom_text(aes(label = round(percent_homeless, 2)), 
+            vjust = -0.25,
+            size = 3)
 ```
+
+
+---
+
+```{r}
+percent_homeless_table <-
+  combined_pir |>
+  filter(pir_year == 2025) |>
+  group_by(State) |>
+  summarize(total_child_enroll = sum(A.10.g, na.rm = TRUE), 
+      total_homeless_enroll = sum(C.48, na.rm = TRUE),
+      num_homeless_na = sum(is.na(C.48)),
+      percent_homeless = total_homeless_enroll / total_child_enroll * 100) |>
+  arrange(desc(percent_homeless)) |>
+  head(10)
+
+percent_homeless_table |>
+  select(State, percent_homeless)
+
+```
+
+---
+
+```{r}
+percent_homeless_table |>
+  mutate(total_not_homeless_enroll = total_child_enroll - total_homeless_enroll) |>
+  pivot_longer(cols = c(total_homeless_enroll, total_not_homeless_enroll),
+               names_to = "homeless_flag",
+               values_to = "value") |>
+  mutate(homeless_flag = case_when(homeless_flag == "total_homeless_enroll" ~ "Homeless",
+                                   TRUE ~ "Not Homeless")) |>
+  ggplot(aes(reorder(State, percent_homeless, decreasing = TRUE), 
+             y = value, 
+             fill = fct_rev(homeless_flag))) +
+  geom_col() +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  labs(x = "State", y = "Total Homeless Enrolled") +
+  scale_fill_manual(values = c("Not Homeless" = "grey", "Homeless" = "blue")) +
+  geom_text(data = ~ filter(.x, homeless_flag == "Homeless"), 
+            aes(label= value), 
+            vjust = -0.25)
+```
+```{r}
+percent_homeless_table |>
+  mutate(total_not_homeless_enroll = total_child_enroll - total_homeless_enroll) |>
+  pivot_longer(cols = c(total_homeless_enroll, total_not_homeless_enroll),
+               names_to = "homeless_flag",
+               values_to = "value") |>
+  mutate(homeless_flag = case_when(homeless_flag == "total_homeless_enroll" ~ "Homeless",
+                                   TRUE ~ "Not Homeless")) |>
+  ggplot(aes(reorder(State, percent_homeless, decreasing = TRUE), 
+             y = value, 
+             fill = fct_rev(homeless_flag))) +
+  geom_col(position = "fill") +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  labs(x = "State", y = "% Homeless Enrolled") +
+  scale_fill_manual(values = c("Not Homeless" = "grey", "Homeless" = "blue")) +
+  geom_text(data = ~ filter(.x, homeless_flag == "Homeless"), 
+            aes(label = round(percent_homeless, 2)),
+            position = position_fill(vjust = 0.25))
+```
+
+---
+
+## Total Homeless Under Five
+
+```{r}
+
+```
+
+--- 
+
+## Total/% Homeless Under Five Served by Head Start
+
+```{r}
+
+```
+
+---
+
+## Overview of Homeless Counts from Different Sources
+
+```{r}
+ed_totals_under_5 |>
+  mutate(HOMELESS_3_5_655 = as.numeric(HOMELESS_3_5_655),
+         HOMELESS_0_5_818 = as.numeric(HOMELESS_0_5_818)) |>
+  select(STATENAME, 
+         YEAR_END, 
+         HOMELESS_UNDER_5_GRADE_1,
+         HOMELESS_3_5_655, 
+         HOMELESS_0_5_818, 
+         TOTAL_HS_HOMELESS_ENROLL) |>
+  pivot_longer(cols = c(HOMELESS_UNDER_5_GRADE_1, 
+               HOMELESS_3_5_655, 
+               HOMELESS_0_5_818, 
+               TOTAL_HS_HOMELESS_ENROLL),
+               names_to = "HOMELESS_MEASURE",
+               values_to = "HOMELESS_COUNT") |>
+  mutate(HOMELESS_MEASURE = case_when(HOMELESS_MEASURE == "HOMELESS_UNDER_5_GRADE_1" ~
+                                        "Grade 1 Proxy Method",
+                                      HOMELESS_MEASURE == "HOMELESS_3_5_655" ~
+                                        "Chidren 3-5 Enrolled in Public Schools (File 655)",
+                                      HOMELESS_MEASURE == "HOMELESS_0_5_818" ~
+                                        "Children 0-5 Served by McKinney-Vento subgrant funds (File 818)",
+                                      HOMELESS_MEASURE == "TOTAL_HS_HOMELESS_ENROLL" ~
+                                        "Homeless Children Enrolled in Head Start")) |>
+  filter(STATENAME == "MASSACHUSETTS") |>
+  ggplot(aes(x = YEAR_END, y = HOMELESS_COUNT, col = HOMELESS_MEASURE, group = HOMELESS_MEASURE)) +
+  geom_line() +
+  theme_minimal() +
+  theme(legend.position = "bottom") +
+  guides(color = guide_legend(nrow = 5))  +
+  geom_text_repel(aes(label = HOMELESS_COUNT), 
+            vjust = -0.5,
+            size = 3) +
+  labs(x = "Year", y = "Homeless Count")
+  
+```
+
+
+---
+
+> Shelter type is not reported disaggregated by grade. We took the percentage of K-12 students in each shelter type, each year for each state and multiplied that percentage by the number of homeless children under 5 identified via the Grade 1 proxy method
+
+```{r}
+ed_totals_under_5_char |>
+  filter(STATENAME == "MASSACHUSETTS") |>
+  ggplot(aes(x = YEAR_END, y = TOTAL_CHAR_UNDER_5, fill = Characteristics)) +
+  geom_col(position = "dodge", width = 0.9) +
+  theme_minimal() +
+  geom_text(aes(label = round(TOTAL_CHAR_UNDER_5, 0)),
+            position = position_dodge(width = 0.9),
+            size = 3,
+            vjust = -0.25  )
+```
+```{r}
+ed_totals_under_5_char |>
+  filter(STATENAME == "MASSACHUSETTS") |>
+  ggplot(aes(x = YEAR_END, y = TOTAL_CHAR_UNDER_5, fill = Characteristics)) +
+  geom_col(position = "fill") +
+  theme_minimal() +
+  geom_text(aes(label = paste(as.character(round(PERCENT_CHAR_ST_YR, 4) * 100) , "%")),
+            position = position_fill(),
+            size = 3,
+            vjust = -0.25  )
+```
+
+
 
