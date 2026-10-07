@@ -43,18 +43,31 @@ pir_import_c <- function(year) {
   if(year %in% c(2021:2022)) {
     pir_data <-
       pir_data |>
-      select(-C.48) |>
+      select(-C.48, -C.24.a.2) |>
       rename(C.48 = C.47,
-             C.47 = C.46)
+             C.47 = C.46,
+             C.22 = C.21,
+             C.22.a = C.21.a,
+             C.22.a.1 = C.21.a.1,
+             C.22.b = C.21.b,
+             C.23.a = C.22.a,
+             C.23.b = C.22.b,
+             C.23.c = C.22.c,
+             C.23.d = C.22.d,
+             C.24 = C.23,
+             C.24.a.2 = C.23.a.2,
+             C.24.b = C.23.b,
+             C.25 = C.24,
+             C.25.b = C.24.b)
   }   
   
   pir_data <-
     pir_data |>
-    select(pir_year, Region:City, C.47, C.48) 
-           #C.22, C.22.a, C.22.a.1, C.22.b,
-           #C.23.a, C.23.b, C.23.c, C.23.d,
-           #C.24, C.24.a.2, C.24.b,
-           #C.25, C.25.b)
+    select(pir_year, Region:City, C.47, C.48,
+           C.22, C.22.a, C.22.a.1, C.22.b,
+           C.23.a, C.23.b, C.23.c, C.23.d,
+           C.24, C.24.a.2, C.24.b,
+           C.25, C.25.b) 
 }
 
 year <- c(2021:2025)
