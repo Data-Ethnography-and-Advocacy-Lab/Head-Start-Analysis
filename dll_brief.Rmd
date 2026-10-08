@@ -1,8 +1,12 @@
 ---
-title: "PIR Summary Stats - MA"
-format: html
-editor: source
+title: "DLL Brief"
+output: ioslides_presentation
+date: "2026-10-07"
 ---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
 
 ```{r}
 library(tidyverse)
@@ -68,84 +72,7 @@ pir_c <- map_df(2023:2025, pir_import_c)
 pir_list <- list(pir_a, pir_b, pir_c)
 combined_pir <- pir_list |>
   reduce(full_join, by = colnames(pir_a)[1:9])
-
-ed_homeless <- read_csv(paste0(temp_path, "ed_express_homeless_21_24.csv"))
-
 ```
-
-## Data Quality Assessments
-
-> Need to come up with meaningful breaks
-
-```{r}
-pir_a <- pir_a |>
-  mutate(size_binned = cut(A.10.g,
-                           breaks=c(0,100,500,1000,1500,2000),
-                           labels=c("0-100",">100-500",">500-1000",">1000-1500", "Greater than 1500")))
-
-pir_a |>
-  filter(State == "MA") |>
-  ggplot(aes(x = size_binned, y = A.13.d)) +
-  geom_jitter(alpha = 0.5)
-```
-
-
-## Homeless Enrollment in MA vs Other States
-
-```{r}
-pir_a |>
-  filter(pir_year == 2025) |>
-  group_by(State) |>
-  summarize(total_child_enroll = sum(A.10.g), 
-      total_homeless_enroll = sum(A.13.d),
-      percent_homeless = total_homeless_enroll / total_child_enroll * 100) |>
-  arrange(desc(percent_homeless))
-```
-
-## Homeless Enrollment Over Time
-
-```{r}
-options(scipen = 999)
-pir_a |>
-  mutate(is_ma = case_when(State == "MA" ~ "MA",
-                           State != "MA" ~ "Other States")) |>
-  group_by(pir_year, is_ma) |>
-  summarize(homeless_children = sum(A.13.d, na.rm = TRUE),
-            total_child_enroll = sum(A.10.g, na.rm = TRUE),
-      percent_homeless = homeless_children / total_child_enroll * 100) |>
-  ggplot(aes(x = pir_year, y = percent_homeless, col = is_ma, group = is_ma)) +
-  geom_line() +
-  scale_x_continuous(breaks = min(pir_a$pir_year):max(pir_a$pir_year)) +
-  scale_y_continuous() +
-  labs(x = "Year", 
-       y = "% Enrolled Homeless Children",
-       col = "",
-       title = paste("Head Start PIR, MA,",
-                     min(pir_a$pir_year), 
-                     "-" , 
-                     max(pir_a$pir_year))) +
-  theme_minimal() 
-
-pir_a |>
-  filter(State == "MA") |>
-  group_by(pir_year, `Type`) |>
-  summarize(homeless_children = sum(A.13.d),
-            total_child_enroll = sum(A.10.g),
-      percent_homeless = homeless_children / total_child_enroll * 100) |>
-  ggplot(aes(x = pir_year, y = percent_homeless)) +
-  geom_line() +
-  facet_wrap(vars(`Type`)) +
-  scale_x_continuous(breaks = min(pir_a$pir_year):max(pir_a$pir_year)) +
-  labs(x = "Year", 
-       y = "% Enrolled Homeless Children", 
-       title = paste("Head Start PIR, MA,",
-                     min(pir_a$pir_year), 
-                     "-" , 
-                     max(pir_a$pir_year))) +
-  theme_minimal() 
-
-```
-
 #dual language learners 
 ```{r} 
 pir_a |>
@@ -324,55 +251,6 @@ pir_b |>
             percent_bilingual_teachers_etc = bilingual_teachers_etc / denom * 100) |>
   arrange(desc(percent_bilingual_teachers_etc))
 ```
-
-## Multilingual Teachers Census Data
-```{r}
-library(tidycensus)
-library(purrr)
-```
-
-```{r}
-pums_vars_2024 <- pums_variables |>
-  filter(year == 2024, survey == "acs1")
-
-pums_vars_2024 |>
-  distinct(var_code, var_label, data_type, level)
-```
-```{r}
-ma_pums_recoded <- get_pums(
-  variables = c("OCCP", "LANX"),
-  state = "MA",
-  survey = "acs1",
-  year = 2024,
-  recode = TRUE
-  )
-```
-
-```{r}
-ma_pums_recoded |>
-  filter(OCCP == 2300 | OCCP == 4600) |>
-  group_by(LANX_label) |>
-  summarize(percent = n() / 623 * 100) |>
-  ggplot(aes(x = LANX_label,
-             y = percent)) + 
-  geom_col(na.rm = TRUE) +
-  scale_y_continuous(limits = c(0, 100)) +
-  labs(x = "",
-       y = "Percent of Teachers/Childcare Workers",
-       title = "Childcare Workers, Pre-K & Kindergarten Teacher Languages in MA") +
-  theme_minimal() +
-  theme(title = element_text(size = 9))
-```
-
-```{r}
-ma_pums_recoded |>
-  filter(LANX != "b") |>
-  group_by(LANX_label) |>
-  summarize(percent = n() / 74617 * 100)
-```
-
-In 2025, Massachusetts is ranked 22nd for C.22 (The total number of children referred for an evaluation to determine eligibility under the Individuals with Disabilities Education Act (IDEA) during the program year) and 24th for C.22.a.1 (Of the children that received an evaluation, the number that were diagnosed with a disability under IDEA). Does this represent a lack of need or rather a lack of resources to get diagnosed?
-
 ## loading census data to calculate the number of bilingual households over time in the us
 
 ```{r}
@@ -505,124 +383,46 @@ ggplot(bilingual_pop_ma, aes(x = year, y = percent_bilingual)) +
        y = "% of MA Population that is Bilingual") +
   theme_minimal() 
 ```
-## Tracking Indicator 11
 
+## Multilingual Teachers Census Data
 ```{r}
-# The number who received an evaluation to determine IDEA eligibility / The total number of children referred for an evaluation to determine eligibility under the Individuals with Disabilities Education Act (IDEA) during the program year
-
-combined_pir |> 
-  filter(pir_year == 2025, State == "MA") |> 
-  summarize(ratio = sum(C.22.a) / sum(C.22)) |> 
-  pull(ratio)
+library(tidycensus)
+library(purrr)
 ```
-
-Indicator 11 from the Massachusetts Department of Elementary and Secondary Education is defined as the number of students with initial evaluation assessments completed within 30 school days divided by the number of students for whom parental consent for initial evaluations was received. From the years 2019-2023, Indicator 11 across the State were as follows:
-- FFY2019 — School Year 2019-2020: 97.28%
-- FFY2020 — School Year 2020-2021: 93.49%
-- FFY2021 — School Year 2021-2022: 88.38%
-- FFY2022 — School Year 2022-2023: 95.32%
-- FFY2023 — School Year 2023-2024: 85.75%
-
-Across Head Start programs, a somewhat analogous statistic on the number who received an evaluation to determine IDEA eligibility divided by the total number of children referred for an evaluation to determine eligibility under the Individuals with Disabilities Education Act (IDEA) during the program year was only 68.39%.
-
-# Evaluation "Waitlist" (Pending Evaluations)
-
-C.23.c counts children referred for an IDEA evaluation whose evaluation was still pending and not yet completed by the responsible agency at year end.
-## Pending Share of Referrals Over Time
-
-### All Head Start Programs
-
 ```{r}
-options(scipen = 999)
-pir_c |>
-  filter(State == "MA") |>
-  group_by(pir_year) |>
-  summarize(referred = sum(C.22),
-            pending = sum(C.23.c),
-            percent_pending = pending / referred * 100) |>
-  ggplot(aes(x = pir_year, y = percent_pending)) +
-  geom_line() +
-  scale_x_continuous(breaks = min(pir_c$pir_year):max(pir_c$pir_year)) +
-  scale_y_continuous(limits = c(0, 30)) +
-  labs(x = "Year",
-       y = "% of Referred Children With Evaluation Pending",
-       title = "Head Start PIR, MA, 2023-2025") +
-  theme_minimal()
+pums_vars_2024 <- pums_variables |>
+  filter(year == 2024, survey == "acs1")
+
+pums_vars_2024 |>
+  distinct(var_code, var_label, data_type, level)
 ```
-
-### By Program
-
 ```{r}
-pir_c |>
-  filter(State == "MA") |>
-  group_by(pir_year, `Type`) |>
-  summarize(referred = sum(C.22),
-            pending = sum(C.23.c),
-            percent_pending = pending / referred * 100) |>
-  ggplot(aes(x = pir_year, y = percent_pending)) +
-  geom_line() +
-  facet_wrap(vars(`Type`)) +
-  scale_x_continuous(breaks = min(pir_c$pir_year):max(pir_c$pir_year)) +
-  labs(x = "Year",
-       y = "% of Referred Children With Evaluation Pending",
-       title = "Head Start PIR, MA, 2023-2025") +
-  theme_minimal()
+ma_pums_recoded <- get_pums(
+  variables = c("OCCP", "LANX"),
+  state = "MA",
+  survey = "acs1",
+  year = 2024,
+  recode = TRUE
+  )
 ```
-
-## Pending as a Share of Non-Evaluations/Reasons for Non-Evaluation
-
-From 2023-2025 pending "Pending" has consistently been the largest single reason a referral goes unevaluated, but its share of non-evaluations fell from  roughly 64% in 2023 to 44% in 2025.
-
 ```{r}
-pir_c |>
-  filter(State == "MA") |>
-  group_by(pir_year) |>
-  summarize("RTI assignment (C.23.a)" = sum(C.23.a),
-            "Parent refused (C.23.b)" = sum(C.23.b),
-            "Pending (C.23.c)" = sum(C.23.c),
-            "Other (C.23.d)" = sum(C.23.d),
-            "Unexplained" = sum(C.22.b) - sum(C.23.a + C.23.b + C.23.c + C.23.d),
-            "Total Not Evaluated (C.22.b)" = sum(C.22.b)) |>
-  pivot_longer(-pir_year,
-               names_to = "Reason for non-evaluation",
-               values_to = "n") |>
-  pivot_wider(names_from = pir_year, values_from = n)
+ma_pums_recoded |>
+  filter(OCCP == 2300 | OCCP == 4600) |>
+  group_by(LANX_label) |>
+  summarize(percent = n() / 623 * 100) |>
+  ggplot(aes(x = LANX_label,
+             y = percent)) + 
+  geom_col(na.rm = TRUE) +
+  scale_y_continuous(limits = c(0, 100)) +
+  labs(x = "",
+       y = "Percent of Teachers/Childcare Workers",
+       title = "Childcare Workers, Pre-K & Kindergarten Teacher Languages in MA") +
+  theme_minimal() +
+  theme(title = element_text(size = 9))
 ```
-
-# Children with IEPs/IFSPs Not Receiving Services
-
-### Children with IEPs
-
 ```{r}
-options(scipen = 999)
-pir_c |>
-  filter(State == "MA") |>
-  group_by(pir_year) |>
-  summarize(not_receiving_IEP = sum(C.24.b, na.rm = TRUE)) |>
-  ggplot(aes(x = pir_year, y = not_receiving_IEP)) +
-  geom_line() +
-  scale_x_continuous(breaks = min(pir_c$pir_year):max(pir_c$pir_year)) +
-  scale_y_continuous(limits = c(0, 45)) +
-  labs(x = "Year",
-       y = "# Children with IEP Not Receiving Services",
-       title = "Head Start PIR, MA, 2023-2025") +
-  theme_minimal()
-```
-
-### Children with IFSPs
-
-```{r}
-options(scipen = 999)
-pir_c |>
-  filter(State == "MA") |>
-  group_by(pir_year) |>
-  summarize(not_receiving_IEP = sum(C.25.b, na.rm = TRUE)) |>
-  ggplot(aes(x = pir_year, y = not_receiving_IEP)) +
-  geom_line() +
-  scale_x_continuous(breaks = min(pir_c$pir_year):max(pir_c$pir_year)) +
-  scale_y_continuous(limits = c(0, 5)) +
-  labs(x = "Year",
-       y = "# Children with IEP Not Receiving Services",
-       title = "Head Start PIR, MA, 2023-2025") +
-  theme_minimal()
+ma_pums_recoded |>
+  filter(LANX != "b") |>
+  group_by(LANX_label) |>
+  summarize(percent = n() / 74617 * 100)
 ```
