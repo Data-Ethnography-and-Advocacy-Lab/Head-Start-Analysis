@@ -1,0 +1,428 @@
+---
+title: "DLL Brief"
+output: ioslides_presentation
+date: "2026-10-07"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r}
+library(tidyverse)
+library(readxl)
+```
+
+```{r}
+OS <- .Platform$OS.type
+
+if (OS == "unix"){
+  temp_path <- "data/" # MAC file path
+} else if (OS == "windows"){
+  temp_path <- "..\\Head-Start-Analysis\\data\\" # windows file path
+} else {
+  print("ERROR: OS could not be identified")
+}
+
+```
+
+
+```{r}
+pir_import_a <- function(year) {
+  
+  filename <- paste0(temp_path, "pir_export_", year, ".xlsx")
+  var
+  pir_data <- read_excel(filename, sheet = 1, skip = 1)
+  pir_data <- pir_data |>
+    mutate(pir_year = year) |>
+    select(pir_year, Region:City, A.10.g, A.13.d, A.27) |>
+    filter(Region != "Totals")
+}
+
+pir_import_b <- function(year) {
+  
+  filename <- paste0(temp_path, "pir_export_", year, ".xlsx")
+  var
+  pir_data <- read_excel(filename, sheet = 2, skip = 1)
+  pir_data <- pir_data |>
+    mutate(pir_year = year) |>
+    select(pir_year, Region:City, B.14, `B.3-1`, `B.3-2`, B.6, B.8, B.9) |>
+    filter(Region != "Totals")
+}
+
+pir_import_c <- function(year) {
+  filename <- paste0(temp_path, "pir_export_", year, ".xlsx")
+  pir_data <- read_excel(filename, sheet = 3, skip = 1)
+  pir_data <- pir_data |>
+    mutate(pir_year = year) |>
+    select(pir_year, Region:City, C.47,C.22, C.22.a, C.22.a.1, C.22.b,
+           C.23.a, C.23.b, C.23.c, C.23.d,
+           C.24, C.24.a.2, C.24.b,
+           C.25, C.25.b) |>
+    filter(Region != "Totals")
+}
+
+year <- c(2021:2025)
+
+
+pir_a <- map_df(year, pir_import_a)
+pir_b <- map_df(year, pir_import_b)
+pir_c <- map_df(2023:2025, pir_import_c)
+
+pir_list <- list(pir_a, pir_b, pir_c)
+combined_pir <- pir_list |>
+  reduce(full_join, by = colnames(pir_a)[1:9])
+```
+#dual language learners 
+```{r} 
+pir_a |>
+  filter(pir_year == 2025) |>
+  group_by(State) |>
+  summarize(total_child_enroll = sum(A.10.g), 
+      dll_enroll = sum(A.27),
+      percent_dll = dll_enroll / total_child_enroll * 100) |>
+  arrange(desc(percent_dll))
+
+pir_a |>
+  filter(State == "MA") |>
+  group_by(pir_year) |>
+  summarize(dual_lang_learners = sum(A.27),
+            total_child_enroll = sum(A.10.g),
+      percent_dual = dual_lang_learners / total_child_enroll * 100) |>
+  ggplot(aes(x = pir_year, y = percent_dual)) +
+  geom_line() +
+  scale_x_continuous(breaks = min(pir_a$pir_year):max(pir_a$pir_year)) +
+  scale_y_continuous(limits = c(0, 100)) +
+  labs(x = "Year", 
+       y = "% Enrolled Dual Language Learners", 
+       title = paste("Head Start PIR, MA,",
+                     min(pir_a$pir_year), 
+                     "-" , 
+                     max(pir_a$pir_year))) +
+  theme_minimal() 
+
+pir_a |>
+  filter(State == "MA") |>
+  group_by(pir_year, `Type`) |>
+  summarize(dual_lang_learners = sum(A.27),
+            total_child_enroll = sum(A.10.g),
+      percent_dual = dual_lang_learners / total_child_enroll * 100) |>
+  ggplot(aes(x = pir_year, y = percent_dual)) +
+  geom_line() +
+  facet_wrap(vars(`Type`)) +
+  scale_x_continuous(breaks = min(pir_a$pir_year):max(pir_a$pir_year)) +
+  labs(x = "Year", 
+       y = "% Enrolled Dual Language Learners", 
+       title = paste("Head Start PIR, MA,",
+                     min(pir_a$pir_year), 
+                     "-" , 
+                     max(pir_a$pir_year))) +
+  theme_minimal() 
+
+```
+
+##DLL Enrollment in MA vs Other States
+```{r}
+pir_a |>
+  filter(pir_year == 2025) |>
+  group_by(State) |>
+  summarize(total_child_enroll = sum(A.10.g), 
+      total_dll_enroll = sum(A.27),
+      percent_dll = total_dll_enroll / total_child_enroll * 100) |>
+  arrange(desc(percent_dll))
+
+# MA is number 4, with 64.9% of students being dual language learners
+```
+
+
+# Bilingual Non Supervisory and Child Development Staff
+```{r} 
+pir_b |>
+  filter(State == "MA") |>
+  group_by(pir_year) |>
+  summarize(bilingual_teachers = sum(B.14)) |>
+  ggplot(aes(x = pir_year, y = bilingual_teachers)) +
+  geom_line() +
+  scale_x_continuous(breaks = min(pir_a$pir_year):max(pir_a$pir_year)) +
+  scale_y_continuous(limits = c(0, 1000)) +
+  labs(x = "Year", 
+       y = "Multilingual Teachers, Home Visitors, & FCC Staff", 
+       title = paste("Head Start PIR, MA,",
+                     min(pir_a$pir_year), 
+                     "-" , 
+                     max(pir_a$pir_year))) +
+  theme_minimal() +
+  theme(axis.title.y = element_text(size = 10))
+
+pir_b |>
+  filter(State == "MA") |>
+  group_by(pir_year, `Type`) |>
+  summarize(bilingual_teachers = sum(B.14)) |>
+  ggplot(aes(x = pir_year, y = bilingual_teachers)) +
+  geom_line() +
+  facet_wrap(vars(`Type`)) +
+  scale_x_continuous(breaks = min(pir_a$pir_year):max(pir_a$pir_year)) +
+  labs(x = "Year", 
+       y = "Multilingual Teachers, Home Visitors, & FCC Staff", 
+       title = paste("Head Start PIR, MA,",
+                     min(pir_a$pir_year), 
+                     "-" , 
+                     max(pir_a$pir_year))) +
+  theme_minimal() +
+  theme(axis.title.y = element_text(size = 10))
+
+```
+
+## Multi-lingual Non-Supervisory and Child Development Staff - Percentages
+
+To calculate these percentages, I divided the answers to question B.14 by the sum totals of the answers to questions B.3-1, B.3-2, B.6, B.8, and B.9. This decision was based on the ChildPlus PIR Calculation Guide 2025-2026, which includes a question B.15 called "Proficient in a Non-English Language". This question, "counts staff with a PIR Position of Classroom Teacher, Assistant Teacher, Home Visitor and FCC Provider. Any
+Classroom Teacher, Assistant Teacher, Home Visitor or FCC Provider who was Terminated and the Replaced checkbox is
+checked will NOT be counted in B.15-B.16." 
+
+This calculation relies on the assumptions that the process for calculating B.14 in 2025 is the same as the process for calculating B.15 in 2026, that the calculation processes for questions that these calculation was performed the same way at every Head Start agency. It also assumes that none of the above mentioned types of staff had multiple of the above titles, and that infant and toddler assistant teachers are not included in B.14, as they are not included in the race question directly before and no data is available in the PIR on the quantity of infant and toddler assistant teachers. 
+
+```{r}
+pir_b |>
+  filter(State == "MA") |>
+  group_by(pir_year) |>
+  summarize(bilingual_teachers_etc = sum(B.14, na.rm = TRUE),
+            total_preschool_classroom = sum(`B.3-1`, na.rm = TRUE),
+            total_preschool_asst = sum(`B.3-2`, na.rm = TRUE),
+            total_infant_toddler_teacher = sum(B.6, na.rm = TRUE),
+            total_home_visitor = sum(B.8, na.rm = TRUE),
+            total_FCC = sum(B.9, na.rm = TRUE),
+            denom = (total_preschool_classroom + total_preschool_asst + total_infant_toddler_teacher + total_home_visitor + total_FCC),
+            percent_bilingual_teachers_etc = bilingual_teachers_etc / denom * 100) |>
+  ggplot(aes(x = pir_year, y = percent_bilingual_teachers_etc)) +
+  geom_line() +
+  scale_x_continuous(breaks = min(pir_a$pir_year):max(pir_a$pir_year)) +
+  scale_y_continuous(limits = c(0, 100)) +
+  labs(x = "Year",
+       y = "Percent of Multilingual Teachers, Home Visitors, & FCC Staff", 
+       title = paste("Head Start PIR, MA,",
+                     min(pir_a$pir_year), 
+                     "-" , 
+                     max(pir_a$pir_year))) +
+  theme_minimal() +
+  theme(axis.title.y = element_text(size = 8))
+
+#this graph has some very extreme changes for Migrant Head Start but there is only 1 Migrant HS compared to 24 EHS and 25 HS
+
+pir_b |>
+  filter(State == "MA") |>
+  group_by(pir_year, `Type`) |>
+  summarize(bilingual_teachers_etc = sum(B.14, na.rm = TRUE),
+            total_preschool_classroom = sum(`B.3-1`, na.rm = TRUE),
+            total_preschool_asst = sum(`B.3-2`, na.rm = TRUE),
+            total_infant_toddler_teacher = sum(B.6, na.rm = TRUE),
+            total_home_visitor = sum(B.8, na.rm = TRUE),
+            total_FCC = sum(B.9, na.rm = TRUE),
+            denom = (total_preschool_classroom + total_preschool_asst + total_infant_toddler_teacher + total_home_visitor + total_FCC),
+            percent_bilingual_teachers_etc = bilingual_teachers_etc / denom * 100) |>
+  ggplot(aes(x = pir_year, y = percent_bilingual_teachers_etc)) +
+  geom_line() +
+  facet_wrap(vars(`Type`)) +
+  scale_x_continuous(breaks = min(pir_a$pir_year):max(pir_a$pir_year)) +
+  scale_y_continuous(limits = c(0, 100)) +
+  labs(x = "Year", 
+       y = "Percent of Multilingual Teachers, Home Visitors, & FCC Staff", 
+       title = paste("Head Start PIR, MA,",
+                     min(pir_a$pir_year), 
+                     "-" , 
+                     max(pir_a$pir_year))) +
+  theme_minimal() +
+  theme(axis.title.y = element_text(size = 8))
+
+```
+
+## Multilingual Non-Supervisory and Child Development Staff in MA vs Other States
+```{r}
+# MA is 6
+pir_b |>
+  filter(pir_year == 2025) |>
+  group_by(State) |>
+  summarize(bilingual_teachers_etc = sum(B.14, na.rm = TRUE),
+            total_preschool_classroom = sum(`B.3-1`, na.rm = TRUE),
+            total_preschool_asst = sum(`B.3-2`, na.rm = TRUE),
+            total_infant_toddler_teacher = sum(B.6, na.rm = TRUE),
+            total_home_visitor = sum(B.8, na.rm = TRUE),
+            total_FCC = sum(B.9, na.rm = TRUE),
+            denom = (total_preschool_classroom + total_preschool_asst + total_infant_toddler_teacher + total_home_visitor + total_FCC),
+            percent_bilingual_teachers_etc = bilingual_teachers_etc / denom * 100) |>
+  arrange(desc(percent_bilingual_teachers_etc))
+```
+## loading census data to calculate the number of bilingual households over time in the us
+
+```{r}
+#install.packages("tidycensus")
+#install.packages("purrr")
+#install.packages("scales")
+library(tidycensus)
+library(purrr)
+library(dplyr)
+library(ggplot2)
+library(scales)
+
+variables <- load_variables(2024, "acs5")
+
+years <- list(2024, 2020, 2016, 2012)
+
+english_only_pop <- map_dfr(
+  years,
+  ~ get_acs(
+    geography = "us", 
+    variables = "B16001_002", 
+    year = .x, 
+    survey = "acs5"),
+  .id = "year")
+
+total_pop <- map_dfr(
+  years,
+  ~ get_acs(
+    geography = "us", 
+    variables = "B16001_001", 
+    year = .x, 
+    survey = "acs5"),
+  .id = "year")
+```
+
+## calculating and graphing number of bilingual households over time in the us
+```{r}
+bilingual_pop <- english_only_pop |>
+  left_join(
+    total_pop|>
+      select(year, GEOID, NAME, totalpop = estimate),
+    by = c("year", "GEOID", "NAME"))
+
+bilingual_pop <- bilingual_pop |>
+  mutate(bilingualpop = totalpop-estimate)
+
+bilingual_pop <- bilingual_pop |>
+  mutate(percent_bilingual = bilingualpop / totalpop * 100)
+
+bilingual_pop$year <- as.integer(bilingual_pop$year)
+bilingual_pop[1, "year"] <- as.integer(2024)
+bilingual_pop[2, "year"] <- as.integer(2020)
+bilingual_pop[3, "year"] <- as.integer(2016)
+bilingual_pop[4, "year"] <- as.integer(2012)
+
+ggplot(bilingual_pop, aes(x = year, y = bilingualpop)) +
+  geom_line() +
+  scale_x_continuous(breaks = min(bilingual_pop$year):max(bilingual_pop$year)) +
+  scale_y_continuous(labels = label_number(scale_cut = cut_short_scale())) +
+  labs(x = "Year",
+       y = "Bilingual Population in the United States",
+       title = paste("Total Bilingual Population, United States,",
+                     min(bilingual_pop$year), 
+                     "-" , 
+                     max(bilingual_pop$year))) +
+  theme_minimal() 
+
+ggplot(bilingual_pop, aes(x = year, y = percent_bilingual)) +
+  geom_line() + scale_x_continuous(breaks = min(bilingual_pop$year):max(bilingual_pop$year)) +
+  labs(x = "Year", 
+       y = "% of the Population that is Bilingual") +
+  theme_minimal()  +
+  scale_x_continuous(breaks = c(2008, 2012, 2016, 2020, 2024))
+```
+
+```{r}
+english_only_pop_ma <- map_dfr(
+  years,
+  ~ get_acs(
+    geography = "state", 
+    state = "MA",
+    variables = "B16001_002", 
+    year = .x, 
+    survey = "acs5"),
+  .id = "year")
+
+total_pop_ma <- map_dfr(
+  years,
+  ~ get_acs(
+    geography = "state", 
+    state = "MA",
+    variables = "B16001_001", 
+    year = .x, 
+    survey = "acs5"),
+  .id = "year")
+
+bilingual_pop_ma <- english_only_pop_ma |>
+  left_join(
+    total_pop_ma|>
+      select(year, GEOID, NAME, totalpop = estimate),
+    by = c("year", "GEOID", "NAME"))
+
+bilingual_pop_ma <- bilingual_pop_ma |>
+  mutate(bilingualpop = totalpop-estimate)
+
+bilingual_pop_ma <- bilingual_pop_ma |>
+  mutate(percent_bilingual = bilingualpop / totalpop * 100)
+
+bilingual_pop_ma$year <- as.integer(bilingual_pop_ma$year)
+bilingual_pop_ma[1, "year"] <- as.integer(2024)
+bilingual_pop_ma[2, "year"] <- as.integer(2020)
+bilingual_pop_ma[3, "year"] <- as.integer(2016)
+bilingual_pop_ma[4, "year"] <- as.integer(2012)
+
+ggplot(bilingual_pop_ma, aes(x = year, y = bilingualpop)) +
+  geom_line() +
+  scale_x_continuous(breaks = min(bilingual_pop_ma$year):max(bilingual_pop_ma$year)) +
+  scale_y_continuous(labels = label_number(scale_cut = cut_short_scale())) +
+  labs(x = "Year",
+       y = "Bilingual Population in MA",
+       title = paste("Total Bilingual Population, MA,",
+                     min(bilingual_pop_ma$year), 
+                     "-" , 
+                     max(bilingual_pop_ma$year))) +
+  theme_minimal() 
+
+ggplot(bilingual_pop_ma, aes(x = year, y = percent_bilingual)) +
+  geom_line() + scale_x_continuous(breaks = min(bilingual_pop_ma$year):max(bilingual_pop_ma$year)) +
+  labs(x = "Year", 
+       y = "% of MA Population that is Bilingual") +
+  theme_minimal() 
+```
+
+## Multilingual Teachers Census Data
+```{r}
+library(tidycensus)
+library(purrr)
+```
+```{r}
+pums_vars_2024 <- pums_variables |>
+  filter(year == 2024, survey == "acs1")
+
+pums_vars_2024 |>
+  distinct(var_code, var_label, data_type, level)
+```
+```{r}
+ma_pums_recoded <- get_pums(
+  variables = c("OCCP", "LANX"),
+  state = "MA",
+  survey = "acs1",
+  year = 2024,
+  recode = TRUE
+  )
+```
+```{r}
+ma_pums_recoded |>
+  filter(OCCP == 2300 | OCCP == 4600) |>
+  group_by(LANX_label) |>
+  summarize(percent = n() / 623 * 100) |>
+  ggplot(aes(x = LANX_label,
+             y = percent)) + 
+  geom_col(na.rm = TRUE) +
+  scale_y_continuous(limits = c(0, 100)) +
+  labs(x = "",
+       y = "Percent of Teachers/Childcare Workers",
+       title = "Childcare Workers, Pre-K & Kindergarten Teacher Languages in MA") +
+  theme_minimal() +
+  theme(title = element_text(size = 9))
+```
+```{r}
+ma_pums_recoded |>
+  filter(LANX != "b") |>
+  group_by(LANX_label) |>
+  summarize(percent = n() / 74617 * 100)
+```
