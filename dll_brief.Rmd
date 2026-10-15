@@ -11,6 +11,11 @@ knitr::opts_chunk$set(echo = FALSE)
 ```{r}
 library(tidyverse)
 library(readxl)
+library(tidycensus)
+library(purrr)
+library(dplyr)
+library(ggplot2)
+library(scales)
 ```
 
 ```{r}
@@ -25,7 +30,6 @@ if (OS == "unix"){
 }
 
 ```
-
 
 ```{r}
 pir_import_a <- function(year) {
@@ -73,67 +77,50 @@ pir_list <- list(pir_a, pir_b, pir_c)
 combined_pir <- pir_list |>
   reduce(full_join, by = colnames(pir_a)[1:9])
 ```
-#dual language learners 
-```{r} 
-pir_a |>
-  filter(pir_year == 2025) |>
-  group_by(State) |>
-  summarize(total_child_enroll = sum(A.10.g), 
-      dll_enroll = sum(A.27),
-      percent_dll = dll_enroll / total_child_enroll * 100) |>
-  arrange(desc(percent_dll))
 
-pir_a |>
-  filter(State == "MA") |>
-  group_by(pir_year) |>
-  summarize(dual_lang_learners = sum(A.27),
-            total_child_enroll = sum(A.10.g),
-      percent_dual = dual_lang_learners / total_child_enroll * 100) |>
-  ggplot(aes(x = pir_year, y = percent_dual)) +
-  geom_line() +
-  scale_x_continuous(breaks = min(pir_a$pir_year):max(pir_a$pir_year)) +
-  scale_y_continuous(limits = c(0, 100)) +
-  labs(x = "Year", 
-       y = "% Enrolled Dual Language Learners", 
-       title = paste("Head Start PIR, MA,",
-                     min(pir_a$pir_year), 
-                     "-" , 
-                     max(pir_a$pir_year))) +
-  theme_minimal() 
-
-pir_a |>
-  filter(State == "MA") |>
-  group_by(pir_year, `Type`) |>
-  summarize(dual_lang_learners = sum(A.27),
-            total_child_enroll = sum(A.10.g),
-      percent_dual = dual_lang_learners / total_child_enroll * 100) |>
-  ggplot(aes(x = pir_year, y = percent_dual)) +
-  geom_line() +
-  facet_wrap(vars(`Type`)) +
-  scale_x_continuous(breaks = min(pir_a$pir_year):max(pir_a$pir_year)) +
-  labs(x = "Year", 
-       y = "% Enrolled Dual Language Learners", 
-       title = paste("Head Start PIR, MA,",
-                     min(pir_a$pir_year), 
-                     "-" , 
-                     max(pir_a$pir_year))) +
-  theme_minimal() 
-
-```
-
-##DLL Enrollment in MA vs Other States
+# Headline Statistics
 ```{r}
-pir_a |>
-  filter(pir_year == 2025) |>
-  group_by(State) |>
-  summarize(total_child_enroll = sum(A.10.g), 
-      total_dll_enroll = sum(A.27),
-      percent_dll = total_dll_enroll / total_child_enroll * 100) |>
-  arrange(desc(percent_dll))
+bilingual population
+variables <- load_variables(2024, "acs5")
 
-# MA is number 4, with 64.9% of students being dual language learners
+years <- list(2024, 2020, 2016, 2012)
+english_only_pop_ma <- map_dfr(
+  years,
+  ~ get_acs(
+    geography = "state", 
+    variables = "B16001_002", 
+    year = .x, 
+    survey = "acs5",
+    state = "MA"),
+  .id = "year")
+
+total_pop_ma <- map_dfr(
+  years,
+  ~ get_acs(
+    geography = "state", 
+    variables = "B16001_001", 
+    year = .x, 
+    survey = "acs5",
+    state = "MA"),
+  .id = "year")
+
+ma_2024_total <- total_pop_ma |>
+  filter(year == 1)
+
+ma_2024_english_only <- english_only_pop_ma |>
+  filter(year ==1)
+
+not_english_only <- ma_2024_total$estimate - ma_2024_english_only$estimate
+not_english_only_percent <- (ma_2024_total$estimate - ma_2024_english_only$estimate) / ma_2024_total$estimate * 100
 ```
 
+```{r}
+# head start
+pir_b |>
+  filter(State == "MA") |>
+  filter(pir_year == 2024) |>
+  summarize(bilingual_teachers = sum(B.14))
+```
 
 # Bilingual Non Supervisory and Child Development Staff
 ```{r} 
@@ -254,9 +241,6 @@ pir_b |>
 ## loading census data to calculate the number of bilingual households over time in the us
 
 ```{r}
-#install.packages("tidycensus")
-#install.packages("purrr")
-#install.packages("scales")
 library(tidycensus)
 library(purrr)
 library(dplyr)
