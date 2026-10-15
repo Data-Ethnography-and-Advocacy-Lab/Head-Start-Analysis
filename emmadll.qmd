@@ -2,6 +2,18 @@
 title: "emmadll"
 format: html
 ---
+```{r}
+OS <- .Platform$OS.type
+
+if (OS == "unix"){
+  temp_path <- "data/" # MAC file path
+} else if (OS == "windows"){
+  temp_path <- "..\\Head-Start-Analysis\\data\\" # windows file path
+} else {
+  print("ERROR: OS could not be identified")
+}
+
+```
 
 ## Loading census data
 ```{r}
@@ -140,4 +152,135 @@ p4 <- ggplot(bilingual_pop_ma, aes(x = year, y = percent_bilingual, group = 1)) 
 
 p1 / p3
 p2 / p4
+```
+
+## Adding data from ACS B16003 which will eventually go into source doc
+```{r}
+eo5_17 <- map_dfr(
+  years,
+  ~ get_acs(
+    geography = "us", 
+    variables = "B16003_003", 
+    year = .x, 
+    survey = "acs5"),
+  .id = "year")
+
+total5_17 <- map_dfr(
+  years,
+  ~ get_acs(
+    geography = "us", 
+    variables = "B16003_002", 
+    year = .x, 
+    survey = "acs5"),
+  .id = "year")
+
+non_e_517 <- eo5_17 |>
+  left_join(
+    total5_17|>
+      select(year, GEOID, NAME, totalpop = estimate),
+    by = c("year", "GEOID", "NAME"))
+
+non_e_517 <- non_e_517 |>
+  rename(eng_only = estimate)
+
+non_e_517 <- non_e_517 |>
+  mutate(non_e_pop = totalpop-eng_only)
+
+non_e_517 <- non_e_517 |>
+  mutate(percent_non_e = non_e_pop / totalpop * 100)
+
+non_e_517$year <- as.character(non_e_517$year)
+non_e_517[1, "year"] <- as.character("2020-2024")
+non_e_517[2, "year"] <- as.character("2016-2020")
+non_e_517[3, "year"] <- as.character("2012-2016")
+non_e_517[4, "year"] <- as.character("2008-2012")
+
+#mention in meeting, i feel like this is wrong. there's no way 95% of people aged 5-17 speak another language at home.
+```
+
+## Adding child pop - will eventually go into source doc
+```{r}
+#install.packages("readxl")
+library(readxl)
+
+#using this temporarily because Lindsay's code for the path wasn't working
+my_file_path <- file.choose()
+
+child_pop <- read_excel(my_file_path, .name_repair = make.names) |>
+  mutate(TimeFrame = as.numeric(TimeFrame),
+         Data = as.numeric(Data),
+         Location = toupper(Location)) |>
+  filter(LocationType == "State" & 
+           Single.Age %in% c("<1", "1", "2", "3", "4", "5") &
+           TimeFrame %in% c(2021:2025)) 
+
+child_pop_2025 <- child_pop[child_pop$TimeFrame == 2025,]
+agechart <- aggregate(Data ~ Single.Age, data = child_pop_2025, FUN = sum, na.rm = TRUE)
+
+agechart <- agechart |>
+  mutate(proxy_percent24 = Data * 0.9011)
+agechart <- agechart |>
+  mutate(proxy_percent20 = Data * 0.9177)
+agechart <- agechart |>
+  mutate(proxy_percent16 = Data * 0.9292)
+agechart <- agechart |>
+  mutate(proxy_percent12 = Data * 0.9407)
+```
+
+#doing the same thing for MA
+```{r}
+eo5_17_ma <- map_dfr(
+  years,
+  ~ get_acs(
+    geography = "state", 
+    state = "MA", 
+    variables = "B16003_003", 
+    year = .x, 
+    survey = "acs5"),
+  .id = "year")
+
+total5_17_ma <- map_dfr(
+  years,
+  ~ get_acs(
+    geography = "state", 
+    state = "MA",
+    variables = "B16003_002", 
+    year = .x, 
+    survey = "acs5"),
+  .id = "year")
+
+non_e_517_ma <- eo5_17_ma |>
+  left_join(
+    total5_17_ma|>
+      select(year, GEOID, NAME, totalpop = estimate),
+    by = c("year", "GEOID", "NAME"))
+
+non_e_517_ma <- non_e_517_ma |>
+  rename(eng_only = estimate)
+
+non_e_517_ma <- non_e_517_ma |>
+  mutate(non_e_pop = totalpop-eng_only)
+
+non_e_517_ma <- non_e_517_ma |>
+  mutate(percent_non_e = non_e_pop / totalpop * 100)
+
+non_e_517_ma$year <- as.character(non_e_517_ma$year)
+non_e_517_ma[1, "year"] <- as.character("2020-2024")
+non_e_517_ma[2, "year"] <- as.character("2016-2020")
+non_e_517_ma[3, "year"] <- as.character("2012-2016")
+non_e_517_ma[4, "year"] <- as.character("2008-2012")
+
+ma_child_pop <- child_pop_2025 |>
+  filter(Location == "MASSACHUSETTS")
+
+ma_agechart <- aggregate(Data ~ Single.Age, data = ma_child_pop, FUN = sum, na.rm = TRUE)
+
+ma_agechart <- ma_agechart |>
+  mutate(proxy_percent24 = Data * 0.8764)
+ma_agechart <- ma_agechart |>
+  mutate(proxy_percent20 = Data * 0.8738)
+ma_agechart <- ma_agechart |>
+  mutate(proxy_percent16 = Data * 0.8884)
+ma_agechart <- ma_agechart |>
+  mutate(proxy_percent12 = Data * 0.8974)
 ```
