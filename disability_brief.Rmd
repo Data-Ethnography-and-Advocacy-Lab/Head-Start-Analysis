@@ -22,7 +22,34 @@ execute:
 library(tidyverse)
 
 source("pir_source.R")
+source("disability_source.R")
 ```
+
+# Headline Statistics
+
+```{r}
+hs_2024 <- disability_under_5 |>
+  filter(ST == "MA", YEAR_END == 2024)
+
+hs_2024 <- disability_under_5 |>
+  filter(ST == "MA", YEAR_END == 2024)
+
+# 1. Statewide total disabled 0-5
+hs_2024 |> pull(IDEA_DISABLED_0_5)
+
+# 2. Statewide proportion of 0-5 disabled
+hs_2024 |> pull(STATEWIDE_PROP_DISABLED)
+
+# 3. Head Start served, disabled (IEP + IFSP)
+hs_2024 |> pull(HS_DISABLED)
+
+# 4. Share of statewide disabled covered by Head Start
+hs_2024 |> pull(HS_SHARE_OF_STATE)
+
+# 5. % of Head Start children who are disabled
+hs_2024 |> pull(PERCENT_HS_DISABLED)
+```
+
 
 ## Disability Enrollment in MA vs Other States
 
