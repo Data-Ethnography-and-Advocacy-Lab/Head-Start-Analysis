@@ -24,7 +24,7 @@ num_dash <- function(x) suppressWarnings(as.numeric(na_if(as.character(x), "-"))
 read_partc <- function(year_end, file) {
   read_excel(paste0(temp_path, file), skip = 8, .name_repair = make.names) |>
     transmute(STATENAME = State,
-              YEAR_END  = year_end,
+              YEAR_END = year_end,
               IDEA_PARTC_0_2 = num_dash(`Number.served.birth.through.2.years`))
 }
 
@@ -33,7 +33,7 @@ read_partb <- function(year_end, file) {
   disab_col <- names(raw)[str_detect(names(raw), "^All.disabilities")]
   raw |>
     transmute(STATENAME = State,
-              YEAR_END  = year_end,
+              YEAR_END = year_end,
               IDEA_PARTB_3_5 = num_dash(.data[[disab_col]]))
 }
 
@@ -47,7 +47,7 @@ idea_disability <- full_join(idea_partc, idea_partb,
   filter(!is.na(STATENAME))
 
 # Statewide child population under 5
-child_pop <- read_excel(paste0(temp_path, "Child population by single age.xlsx"),
+child_pop <- read_excel(paste0(temp_path, "child_pop_state_age.xlsx"),
                         .name_repair = make.names) |>
   mutate(TimeFrame = as.numeric(TimeFrame),
          Data = as.numeric(Data),
@@ -64,11 +64,11 @@ pop_under_5 <- child_pop |>
 hs_disability_by_state <-
   combined_pir |>
   group_by(pir_year, State) |>
-  summarize(TOTAL_HS_ENROLL  = sum(A.10.g, na.rm = TRUE),
-            HS_IEP           = sum(C.24, na.rm = TRUE),
-            HS_IFSP          = sum(C.25, na.rm = TRUE),
-            HS_DISABLED      = HS_IEP + HS_IFSP,
-            HS_PROGRAMS      = n(),
+  summarize(TOTAL_HS_ENROLL = sum(A.10.g, na.rm = TRUE),
+            HS_IEP = sum(C.24, na.rm = TRUE),
+            HS_IFSP = sum(C.25, na.rm = TRUE),
+            HS_DISABLED = HS_IEP + HS_IFSP,
+            HS_PROGRAMS = n(),
             PERCENT_HS_DISABLED = HS_DISABLED / TOTAL_HS_ENROLL * 100,
             .groups = "drop")
 
@@ -86,7 +86,7 @@ disability_under_5 <-
   left_join(hs_disability_by_state,
             by = c("ST" = "State", "YEAR_END" = "pir_year")) |>
   mutate(STATEWIDE_PROP_DISABLED = IDEA_DISABLED_0_5 / POPULATION_UNDER_5 * 100,
-         HS_SHARE_OF_STATE       = HS_DISABLED / IDEA_DISABLED_0_5 * 100)
+         HS_SHARE_OF_STATE = HS_DISABLED / IDEA_DISABLED_0_5 * 100)
 
 # Child Population Statistics: https://datacenter.aecf.org/data/tables/100-child-population-by-single-age?loc=1&loct=1#detailed/1/any/false/1096/42,43,44,45/418
 # Ages 3-5 IDEA Statistics: https://data.ed.gov/dataset/idea-section-618-data-products-static-tables-part-b-count-environ-table2
