@@ -25,17 +25,48 @@ source("bilingual-teachers-source.R")
 
 # Headline Statistics
 ```{r}
+#not english only MA total & percent
 not_english_only <- ma_2024_total$estimate - ma_2024_english_only$estimate
 not_english_only_percent <- (ma_2024_total$estimate - ma_2024_english_only$estimate) / ma_2024_total$estimate * 100
+not_english_only
+not_english_only_percent
 ```
 
 ```{r}
-# head start
-pir_b |>
+# head start bilingual teachers total
+bilingual_hs <- pir_b |>
   filter(State == "MA") |>
   filter(pir_year == 2024) |>
   summarize(bilingual_teachers = sum(B.14))
+bilingual_hs$bilingual_teachers
 ```
+
+```{r}
+# percent of ma bilingual early educators that work at head start ???
+```
+
+To calculate the percentage below, I divided the answers to question B.14 by the sum totals of the answers to questions B.3-1, B.3-2, B.6, B.8, and B.9. This decision was based on the ChildPlus PIR Calculation Guide 2025-2026, which includes a question B.15 called "Proficient in a Non-English Language". This question, "counts staff with a PIR Position of Classroom Teacher, Assistant Teacher, Home Visitor and FCC Provider. Any
+Classroom Teacher, Assistant Teacher, Home Visitor or FCC Provider who was Terminated and the Replaced checkbox is
+checked will NOT be counted in B.15-B.16." 
+
+This calculation relies on the assumptions that the process for calculating B.14 in 2025 is the same as the process for calculating B.15 in 2026, that the calculation processes for questions that these calculation was performed the same way at every Head Start agency. It also assumes that none of the above mentioned types of staff had multiple of the above titles, and that infant and toddler assistant teachers are not included in B.14, as they are not included in the race question directly before and no data is available in the PIR on the quantity of infant and toddler assistant teachers. 
+```{r}
+#percent of head start staff bilingual
+hs_staff_summary <- pir_b |>
+  filter(State == "MA") |>
+  filter(pir_year == 2024) |>
+  summarize(bilingual_teachers_etc = sum(B.14, na.rm = TRUE),
+            total_preschool_classroom = sum(`B.3-1`, na.rm = TRUE),
+            total_preschool_asst = sum(`B.3-2`, na.rm = TRUE),
+            total_infant_toddler_teacher = sum(B.6, na.rm = TRUE),
+            total_home_visitor = sum(B.8, na.rm = TRUE),
+            total_FCC = sum(B.9, na.rm = TRUE),
+            denom = (total_preschool_classroom + total_preschool_asst + total_infant_toddler_teacher + total_home_visitor + total_FCC),
+            percent_bilingual_teachers_etc = bilingual_teachers_etc / denom * 100)
+
+hs_staff_summary$percent_bilingual_teachers_etc
+```
+
 
 # Bilingual Non Supervisory and Child Development Staff
 ```{r} 
@@ -77,11 +108,7 @@ pir_b |>
 
 ## Multi-lingual Non-Supervisory and Child Development Staff - Percentages
 
-To calculate these percentages, I divided the answers to question B.14 by the sum totals of the answers to questions B.3-1, B.3-2, B.6, B.8, and B.9. This decision was based on the ChildPlus PIR Calculation Guide 2025-2026, which includes a question B.15 called "Proficient in a Non-English Language". This question, "counts staff with a PIR Position of Classroom Teacher, Assistant Teacher, Home Visitor and FCC Provider. Any
-Classroom Teacher, Assistant Teacher, Home Visitor or FCC Provider who was Terminated and the Replaced checkbox is
-checked will NOT be counted in B.15-B.16." 
 
-This calculation relies on the assumptions that the process for calculating B.14 in 2025 is the same as the process for calculating B.15 in 2026, that the calculation processes for questions that these calculation was performed the same way at every Head Start agency. It also assumes that none of the above mentioned types of staff had multiple of the above titles, and that infant and toddler assistant teachers are not included in B.14, as they are not included in the race question directly before and no data is available in the PIR on the quantity of infant and toddler assistant teachers. 
 
 ```{r}
 pir_b |>

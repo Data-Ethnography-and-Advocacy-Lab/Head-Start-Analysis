@@ -29,7 +29,7 @@ pir_import_b <- function(year) {
   pir_data <- read_excel(filename, sheet = 2, skip = 1)
   pir_data <- pir_data |>
     mutate(pir_year = year) |>
-    select(pir_year, Region:City, B.14) |>
+    select(pir_year, Region:City, B.14, `B.3-1`, `B.3-2`, B.6, B.8, B.9) |>
     filter(Region != "Totals")
 }
 
