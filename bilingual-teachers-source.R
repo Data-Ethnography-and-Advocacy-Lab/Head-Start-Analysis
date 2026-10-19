@@ -33,25 +33,6 @@ ma_2024_total <- total_pop_ma |>
 ma_2024_english_only <- english_only_pop_ma |>
   filter(year ==1)
 
-ma_prek_kinder_2024 <- map_dfr(
-  years,
-  ~ get_acs(
-    geography = "state", 
-    variables = "B24114_156", 
-    year = 2024, 
-    survey = "acs5",
-    state = "MA"))
-
-ma_childcare_2024 <- map_dfr(
-  years,
-  ~ get_acs(
-    geography = "state", 
-    variables = "B24114_313", 
-    year = 2024, 
-    survey = "acs5",
-    state = "MA"),
-  .id = "year")
-
 pums_vars_2024 <- pums_variables |>
   filter(year == 2024, survey == "acs1")
 
@@ -65,3 +46,14 @@ ma_pums_recoded <- get_pums(
   year = 2024,
   recode = TRUE
 )
+
+years_acs1 <- list(2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023, 2024, 2025)
+
+ma_pums_recoded_all <- map_dfr(years_acs1,
+                               ~ get_pums(
+  variables = c("OCCP", "LANX"),
+  state = "MA",
+  survey = "acs1",
+  year = .x,
+  recode = TRUE),
+.id = "pums_year")
