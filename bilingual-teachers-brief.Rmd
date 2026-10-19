@@ -42,7 +42,12 @@ bilingual_hs$bilingual_teachers
 ```
 
 ```{r}
-# percent of ma bilingual early educators that work at head start ???
+# percent of ma bilingual early educators that work at head start # proxy method bc full state language by occupation data isn't in the census: use prek, kindergarten, childcare worker percent from PUMS, get total of those workers in ma, apply percent to get estimate total that are bilingual, get percent that work at head start
+teacher_lang_summary <- ma_pums_recoded |>
+  filter(OCCP == 2300 | OCCP == 4600) |>
+  filter(LANX == 1) |>
+  summarize(prop = n() / 623)
+ma_percent_multi_preketc <- teacher_lang_summary$prop
 ```
 
 To calculate the percentage below, I divided the answers to question B.14 by the sum totals of the answers to questions B.3-1, B.3-2, B.6, B.8, and B.9. This decision was based on the ChildPlus PIR Calculation Guide 2025-2026, which includes a question B.15 called "Proficient in a Non-English Language". This question, "counts staff with a PIR Position of Classroom Teacher, Assistant Teacher, Home Visitor and FCC Provider. Any
@@ -66,7 +71,6 @@ hs_staff_summary <- pir_b |>
 
 hs_staff_summary$percent_bilingual_teachers_etc
 ```
-
 
 # Bilingual Non Supervisory and Child Development Staff
 ```{r} 
