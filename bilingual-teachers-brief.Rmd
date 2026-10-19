@@ -72,6 +72,13 @@ hs_staff_summary <- pir_b |>
 hs_staff_summary$percent_bilingual_teachers_etc
 ```
 
+# Temporal Visualizations
+```{r}
+total_and_english <- total_pop_ma |>
+  left_join(english_only_pop_ma, join_by(year))
+```
+
+
 # Bilingual Non Supervisory and Child Development Staff
 ```{r} 
 pir_b |>
