@@ -1,0 +1,359 @@
+---
+title: "MA Head Start Homelessness Data Brief"
+subtitle: "Data Ethnography and Advocacy Lab, 2026"
+author: "FILL"
+editor: source
+execute:
+  echo: false
+  messages: false
+  warnings: false
+format: 
+  dashboard:
+    scrolling: true
+---
+
+
+```{r}
+library(tidyverse)
+library(ggrepel)
+
+source("pir_source.R")
+source("homeless_source.R")
+```
+
+## Homelessness in MA in 2024
+
+```{r}
+#| content: valuebox
+#| title: "Total number of infants and children 0-5 that are homeless in MA"
+
+ma_homeless_total_2024 <- ed_totals_under_5 |>
+  filter(STATENAME == "MASSACHUSETTS" & YEAR_END == 2024) |>
+  select(HOMELESS_UNDER_5_GRADE_1) |>
+  pull()
+
+list(
+  icon = "123",
+  color = "secondary",
+  value = ma_homeless_total_2024
+)
+```
+
+```{r}
+#| content: valuebox
+#| title: "Proportion of the infants and children 0-5 that are homeless in MA"
+
+ma_homeless_percent_2024 <- ed_totals_under_5 |>
+  filter(STATENAME == "MASSACHUSETTS" & YEAR_END == 2024) |>
+  select(PERCENT_UNDER_5_HOMELESS) |>
+  pull()
+
+list(
+  icon = "percent",
+  color = "secondary",
+  value = round(ma_homeless_percent_2024, 2)
+)
+```
+
+## Head Start Homeless Support, MA, 2024
+
+```{r}
+#| content: valuebox
+#| title: "Total number of homeless children that Head Start serves in MA"
+
+ma_total_hs_homeless_2024 <- hs_homeless_by_state |>
+  filter(State == "MA" & pir_year == 2024) |>
+  select(TOTAL_HS_HOMELESS_ENROLL) |>
+  pull()
+
+list(
+  icon = "123",
+  color = "secondary",
+  value = ma_total_hs_homeless_2024
+)
+```
+
+```{r}
+#| content: valuebox
+#| title: "Percent of children enrolled in Head Start that are homeless in MA"
+
+ma_percent_hs_homeless_2024 <- hs_homeless_by_state |>
+  filter(State == "MA" & pir_year == 2024) |>
+  select(PERCENT_HS_ENROLL_HOMELESS) |>
+  pull()
+
+list(
+  icon = "percent",
+  color = "secondary",
+  value = round(ma_percent_hs_homeless_2024, 2)
+)
+```
+
+```{r}
+#| content: valuebox
+#| title: "Percent of homeless children in MA that Head Start serves"
+
+ma_percent_hs_homeless_serves_2024 <- ed_totals_under_5 |>
+  filter(STATENAME == "MASSACHUSETTS" & YEAR_END == 2024) |>
+  select(PERCENT_HOMELESS_POP_HS) |>
+  pull()
+
+list(
+  icon = "percent",
+  color = "secondary",
+  value = round(ma_percent_hs_homeless_serves_2024, 2)
+)
+```
+
+## Temporal Visualizations
+
+```{r}
+options(scipen = 999)
+ed_totals_under_5 |>
+  mutate(is_ma = case_when(ST == "MA" ~ "MA",
+                           ST != "MA" ~ "Other States")) |>
+  group_by(YEAR_END, is_ma) |>
+  filter(!is.na(is_ma)) |>
+  summarize(homeless_children = sum(HOMELESS_UNDER_5_GRADE_1, na.rm = TRUE),
+            total_population = sum(POPULATION_UNDER_5, na.rm = TRUE)) |>
+  ungroup() |>
+  group_by(YEAR_END) |>
+  mutate(is_ma = case_when(is_ma == "MA" ~ "MA",
+                           is_ma != "MA" ~ "USA"),
+         homeless_children = case_when(is_ma == "MA" ~ homeless_children,
+                           is_ma == "USA" ~ sum(homeless_children, na.rm = TRUE)),
+         total_population = case_when(is_ma == "MA" ~ total_population,
+                           is_ma == "USA" ~ sum(total_population)),
+         ,
+      percent_homeless = homeless_children / total_population * 100) |>
+  ggplot(aes(x = YEAR_END, y = percent_homeless, col = is_ma, group = is_ma)) +
+  geom_line() +
+  scale_x_continuous() +
+  scale_y_continuous() +
+  labs(x = "Year", 
+       y = "% Homeless Children",
+       col = "",
+       title = paste("Homeless Population via Grade 1 Proxy, ",
+                     min(ed_totals_under_5$YEAR_END), 
+                     "-" , 
+                     max(ed_totals_under_5$YEAR_END))) +
+  theme_minimal()  +
+  geom_text(aes(label = round(percent_homeless, 2)), 
+            vjust = -0.25)
+
+```
+
+```{r}
+options(scipen = 999)
+combined_pir |>
+  mutate(is_ma = case_when(State == "MA" ~ "MA",
+                           State != "MA" ~ "Other States")) |>
+  group_by(pir_year, is_ma) |>
+  filter(!is.na(is_ma)) |>
+  summarize(homeless_children = sum(C.48, na.rm = TRUE),
+            total_child_enroll = sum(A.10.g, na.rm = TRUE)) |>
+  ungroup() |>
+  group_by(pir_year) |>
+  mutate(is_ma = case_when(is_ma == "MA" ~ "MA",
+                           is_ma != "MA" ~ "USA"),
+         homeless_children = case_when(is_ma == "MA" ~ homeless_children,
+                           is_ma == "USA" ~ sum(homeless_children, na.rm = TRUE)),
+         total_child_enroll = case_when(is_ma == "MA" ~ total_child_enroll,
+                           is_ma == "USA" ~ sum(total_child_enroll)),
+         ,
+      percent_homeless = homeless_children / total_child_enroll * 100) |>
+  ggplot(aes(x = pir_year, y = percent_homeless, col = is_ma, group = is_ma)) +
+  geom_line() +
+  scale_x_continuous(breaks = min(combined_pir$pir_year):max(combined_pir$pir_year)) +
+  scale_y_continuous() +
+  labs(x = "Year", 
+       y = "% Enrolled Homeless Children",
+       col = "",
+       title = paste("Head Start Homeless Enrollments, ",
+                     min(combined_pir$pir_year), 
+                     "-" , 
+                     max(combined_pir$pir_year))) +
+  theme_minimal()  +
+  geom_text(aes(label = round(percent_homeless, 2)), 
+            vjust = -0.25)
+
+```
+
+```{r}
+options(scipen = 999)
+ed_totals_under_5 |>
+  mutate(is_ma = case_when(ST == "MA" ~ "MA",
+                           ST != "MA" ~ "Other States")) |>
+  group_by(YEAR_END, is_ma) |>
+  filter(!is.na(is_ma)) |>
+  summarize(homeless_children = sum(HOMELESS_UNDER_5_GRADE_1, na.rm = TRUE),
+            hs_homless = sum(TOTAL_HS_HOMELESS_ENROLL, na.rm = TRUE)) |>
+  ungroup() |>
+  group_by(YEAR_END) |>
+  mutate(is_ma = case_when(is_ma == "MA" ~ "MA",
+                           is_ma != "MA" ~ "USA"),
+         homeless_children = case_when(is_ma == "MA" ~ homeless_children,
+                           is_ma == "USA" ~ sum(homeless_children, na.rm = TRUE)),
+         hs_homless = case_when(is_ma == "MA" ~ hs_homless,
+                           is_ma == "USA" ~ sum(hs_homless)),
+         ,
+      percent_homeless = hs_homless / homeless_children * 100) |>
+  ggplot(aes(x = YEAR_END, y = percent_homeless, col = is_ma, group = is_ma)) +
+  geom_line() +
+  scale_x_continuous() +
+  scale_y_continuous() +
+  labs(x = "Year", 
+       y = "% Homeless Children Served",
+       col = "",
+       title = paste("Head Start Homeless Served, ",
+                     min(combined_pir$pir_year), 
+                     "-" , 
+                     max(combined_pir$pir_year))) +
+  theme_minimal()  +
+  geom_text(aes(label = round(percent_homeless, 2)), 
+            vjust = -0.25)
+
+```
+
+## Rankings
+
+```{r}
+#| content: valuebox
+#| title: "MA Ranking: percent of children enrolled in Head Start that are homeless "
+
+percent_homeless_table <-
+  combined_pir |>
+  group_by(pir_year, State) |>
+  summarize(total_child_enroll = sum(A.10.g, na.rm = TRUE), 
+      total_homeless_enroll = sum(C.48, na.rm = TRUE),
+      num_homeless_na = sum(is.na(C.48)),
+      percent_homeless = round(total_homeless_enroll / total_child_enroll * 100, 2)) |>
+  arrange(desc(percent_homeless)) |>
+  ungroup() |>
+  group_by(pir_year) |>
+  mutate(state_rank = rank(-percent_homeless, ties.method = "min")) |>
+  ungroup()
+
+ma_state_rank <- percent_homeless_table |>
+  filter(State == "MA" & pir_year == 2024) |>
+  select(state_rank) |>
+  pull()
+
+list(
+  icon = "award",
+  color = "secondary",
+  value = ma_state_rank
+)
+```
+
+```{r}
+library(DT)
+percent_homeless_table |>
+  filter(pir_year == 2024 & (State == "MA" | state_rank <= 5)) |>
+  select(State, 
+         `% Homeless Enrolled` =  percent_homeless) |>
+  datatable()
+
+```
+
+```{r}
+library(leaflet)
+library(tigris)
+library(sf)
+us_states <- states(cb = TRUE, resolution = "20m") |>
+  left_join(percent_homeless_table |>
+              filter(pir_year == 2024), by = c("STUSPS" = "State")) |>
+  st_transform(4326)
+
+pal_bin_state_rank <- colorBin(palette="BuGn", 
+                    domain = us_states$percent_homeless,
+                    bins = 5)
+
+usa_map <- leaflet(width = "100%") %>%
+  setView(lat = 30, lng = -95, zoom = 3) %>%
+  addProviderTiles(providers$Esri.NatGeoWorldMap) |> addPolygons(data = us_states, 
+              weight = 1,
+              color = "black",
+              fillColor = ~pal_bin_state_rank(percent_homeless),
+              fillOpacity = 0.8) |>
+  addLegend(data = us_states,
+            title = "% Homeless Enrolled HS", 
+            pal = pal_bin_state_rank, 
+            values = ~percent_homeless)
+
+usa_map
+```
+
+
+
+## Overview of Homeless Counts from Different Sources
+
+```{r}
+ed_totals_under_5 |>
+  mutate(HOMELESS_3_5_655 = as.numeric(HOMELESS_3_5_655),
+         HOMELESS_0_5_818 = as.numeric(HOMELESS_0_5_818)) |>
+  select(STATENAME, 
+         YEAR_END, 
+         HOMELESS_UNDER_5_GRADE_1,
+         HOMELESS_3_5_655, 
+         HOMELESS_0_5_818, 
+         TOTAL_HS_HOMELESS_ENROLL) |>
+  pivot_longer(cols = c(HOMELESS_UNDER_5_GRADE_1, 
+               HOMELESS_3_5_655, 
+               HOMELESS_0_5_818, 
+               TOTAL_HS_HOMELESS_ENROLL),
+               names_to = "HOMELESS_MEASURE",
+               values_to = "HOMELESS_COUNT") |>
+  mutate(HOMELESS_MEASURE = case_when(HOMELESS_MEASURE == "HOMELESS_UNDER_5_GRADE_1" ~
+                                        "Grade 1 Proxy Method",
+                                      HOMELESS_MEASURE == "HOMELESS_3_5_655" ~
+                                        "Chidren 3-5 Enrolled in Public Schools (File 655)",
+                                      HOMELESS_MEASURE == "HOMELESS_0_5_818" ~
+                                        "Children 0-5 Served by McKinney-Vento subgrant funds (File 818)",
+                                      HOMELESS_MEASURE == "TOTAL_HS_HOMELESS_ENROLL" ~
+                                        "Homeless Children Enrolled in Head Start")) |>
+  filter(STATENAME == "MASSACHUSETTS") |>
+  ggplot(aes(x = YEAR_END, y = HOMELESS_COUNT, col = HOMELESS_MEASURE, group = HOMELESS_MEASURE)) +
+  geom_line() +
+  theme_minimal() +
+  theme(legend.position = "bottom") +
+  guides(color = guide_legend(nrow = 5))  +
+  geom_text_repel(aes(label = HOMELESS_COUNT), 
+            vjust = -0.5,
+            size = 3) +
+  labs(x = "Year", y = "Homeless Count")
+  
+```
+
+
+## By Shelter Type
+
+Shelter type is not reported disaggregated by grade. We took the percentage of K-12 students in each shelter type, each year for each state and multiplied that percentage by the number of homeless children under 5 identified via the Grade 1 proxy method
+
+```{r}
+ed_totals_under_5_char |>
+  filter(STATENAME == "MASSACHUSETTS") |>
+  ggplot(aes(x = YEAR_END, y = TOTAL_CHAR_UNDER_5, fill = Characteristics)) +
+  geom_col(position = "dodge", width = 0.9) +
+  theme_minimal() +
+  geom_text(aes(label = round(TOTAL_CHAR_UNDER_5, 0)),
+            position = position_dodge(width = 0.9),
+            size = 3,
+            vjust = -0.25  )
+```
+
+
+```{r}
+ed_totals_under_5_char |>
+  filter(STATENAME == "MASSACHUSETTS") |>
+  ggplot(aes(x = YEAR_END, y = TOTAL_CHAR_UNDER_5, fill = Characteristics)) +
+  geom_col(position = "fill") +
+  theme_minimal() +
+  geom_text(aes(label = paste(as.character(round(PERCENT_CHAR_ST_YR, 4) * 100) , "%")),
+            position = position_fill(),
+            size = 3,
+            vjust = -0.25  )
+```
+
+
+
