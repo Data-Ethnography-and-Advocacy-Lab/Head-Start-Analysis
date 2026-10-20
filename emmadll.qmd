@@ -285,15 +285,70 @@ ma_agechart <- ma_agechart |>
 
 #headline stats code
 ```{r}
+source("pir_source.R")
+
 statewide_dll <- sum(ma_agechart$proxy_percent24)
 statewide_children <- sum(non_e_517_ma[1,7])
 statewide_percent <- statewide_dll/statewide_children
+
+headstart_dll_states <- pir_a |>
+  filter(pir_year == 2024) |>
+  group_by(State) |>
+  summarize(total_child_enroll = sum(A.10.g), 
+      total_dll_enroll = sum(A.27),
+      percent_dll = total_dll_enroll / total_child_enroll * 100) |>
+  arrange(desc(percent_dll))
+headstart_total <- sum(headstart_dll_states[4,2])
+headstart_dll <- sum(headstart_dll_states[4,3])
+
+ma_child_pop_2125 <- ma_child_pop[ma_child_pop$TimeFrame >= 2021 & ma_child_pop$TimeFrame <= 2025, ]
+ma_agechart2125 <- aggregate(Data ~ Single.Age, data = ma_child_pop_2125, FUN = sum, na.rm = TRUE)
+
+ma_agechart2125 <- ma_agechart2125 |>
+  mutate(proxy_percent24 = Data * 0.2173485)
+ma_agechart2125 <- ma_agechart2125 |>
+  mutate(proxy_percent20 = Data * 0.2198973)
+ma_agechart2125 <- ma_agechart2125 |>
+  mutate(proxy_percent16 = Data * 0.2203787)
+ma_agechart2125 <- ma_agechart2125 |>
+  mutate(proxy_percent12 = Data * 0.2161038)
+
+ggplot(agechart, aes(x = year, y = percent_bilingual, group = 1)) +
+  geom_line() + 
+  labs(x = "ACS 5 Year Survey Range", 
+       y = "% MA Bilingual Population",
+       title = "Percent Bilingual Population, Massachusetts, 2008-2024") +
+  theme_minimal() 
 ```
 
-#Headline Statistics (For 2024)
+#Headline Statistics (for 2024)
 ```{r}
+# 1. Statewide total dual language learners 0-5
 print(statewide_dll)
+
+# 2. Statewide proportion of dual language learners aged 0-5
 print(statewide_percent)
-#a.10.g
+
+# 3. Statewide total dual language learners 0-5 served by Head Start
+#out of how many in the state are dll, what number is served by hs
+print(headstart_dll)
+
+# 4. Proportion of statewide total covered by Head Start
+#out of how many in the state are dll, what percent is served by hs
+print(headstart_dll/statewide_dll)
+
+# 5. Proportion of Head Start children that are dual language learners
+print(headstart_dll/headstart_total)
 ```
+
+#Temporal Visualizations
+```{r}
+# 1. Statewide proportion of dual language learners aged 0-5
+
+
+```
+
+
+#MA Ranking
+
  
