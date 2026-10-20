@@ -42,7 +42,7 @@ bilingual_hs$bilingual_teachers
 ```
 
 ```{r}
-# percent of ma bilingual early educators that work at head start # proxy method bc full state language by occupation data isn't in the census: use prek, kindergarten, childcare worker percent from PUMS, get total of those workers in ma, apply percent to get estimate total that are bilingual, get percent that work at head start
+# percent of ma bilingual early educators that work at head start # proxy method bc full state language by occupation data isn't in the census: use prek, kindergarten, childcare worker percent from PUMS, get total adults in ma, apply percents of childcare workers and bilingual childcare workers to total to get estimate total that are bilingual, get percent that estimate that work at head start
 teacher_lang_summary <- ma_pums_recoded |>
   filter(OCCP == 2300 | OCCP == 4600) |>
   filter(LANX == 1) |>
