@@ -47,15 +47,34 @@ ma_pums_recoded <- get_pums(
   recode = TRUE
 )
 
-acs1_years <- c(2021, 2022, 2023, 2024, 2025)
+ma_pums_2021 <-
+  get_pums(
+    variables = c("OCCP", "LANX"),
+    state = "MA",
+    survey = "acs1",
+    year = 2021,
+    recode = TRUE)
 
-#ma_pums_temporal <- map_dfr(
-#  acs1_years,
-#  ~ get_pums(
- #   variables = c("OCCP", "LANX"),
-#    state = "MA",
- #   survey = "acs1",
- #   year = .x,
-  #  recode = TRUE
- # )
-#)
+ma_pums_2022 <-
+  get_pums(
+    variables = c("OCCP", "LANX"),
+    state = "MA",
+    survey = "acs1",
+    year = 2022,
+    recode = TRUE)
+
+ma_pums_2023 <-
+  get_pums(
+    variables = c("OCCP", "LANX"),
+    state = "MA",
+    survey = "acs1",
+    year = 2023,
+    recode = TRUE)
+
+ma_pums_2025 <-
+  get_pums(
+    variables = c("OCCP", "LANX"),
+    state = "MA",
+    survey = "acs1",
+    year = 2025,
+    recode = TRUE)
