@@ -138,16 +138,16 @@ ma_earlyed_2021 <- ma_pums_2021 |>
 
 summary_2021 <- ma_earlyed_2021 |>
   filter(LANX == 1) |>
-  summarize(prop = n()/ 581)
+  summarize(prop = n()/ 581 * 100)
 summary_2022 <- ma_earlyed_2022 |>
   filter(LANX == 1) |>
-  summarize(prop = n()/ 614)
+  summarize(prop = n()/ 614 * 100)
 summary_2023 <- ma_earlyed_2023 |>
   filter(LANX == 1) |>
-  summarize(prop = n()/ 580)
+  summarize(prop = n()/ 580 * 100)
 summary_2024 <- ma_earlyed_2021 |>
   filter(LANX == 1) |>
-  summarize(prop = n()/ 623)
+  summarize(prop = n()/ 623 * 100)
 
 ma_multilang_temporal <- data.frame(
   year = c(2021, 2022, 2023, 2024),
@@ -159,18 +159,14 @@ ma_multilang_temporal |>
              y = prop_multilingual)) +
   geom_line() +
   scale_x_continuous() +
-  scale_y_continuous() +
+  scale_y_continuous(limits = c(0,50)) +
   scale_color_manual(values = hs_palette) +
   labs(x = "Year", 
        y = "% Multilingual Early Educator",
-       col = "",
-       title = paste("Homeless Population via Grade 1 Proxy, ",
-                     min(ed_totals_under_5$YEAR_END), 
-                     "-" , 
-                     max(ed_totals_under_5$YEAR_END))) +
+       title = "About 1 in 4 Early Educators in MA Speak Another Language") +
   theme_minimal()  +
-  geom_text(aes(label = round(percent_homeless, 2)), 
-            vjust = -0.25)
+  geom_text(aes(label = round(prop_multilingual, 2)), 
+            vjust = 1)
 ```
 
 ```{r}
@@ -198,27 +194,4 @@ pir_b |>
   theme_minimal()
 ```
 
-```{r}
-pir_b |>
-  group_by(pir_year) |>
-  group_by(State) |>
-  summarize(bilingual_teachers_etc = sum(B.14, na.rm = TRUE),
-            total_preschool_classroom = sum(`B.3-1`, na.rm = TRUE),
-            total_preschool_asst = sum(`B.3-2`, na.rm = TRUE),
-            total_infant_toddler_teacher = sum(B.6, na.rm = TRUE),
-            total_home_visitor = sum(B.8, na.rm = TRUE),
-            total_FCC = sum(B.9, na.rm = TRUE),
-            denom = (total_preschool_classroom + total_preschool_asst + total_infant_toddler_teacher + total_home_visitor + total_FCC),
-            percent_bilingual_teachers_etc = bilingual_teachers_etc / denom * 100) |>
-  ggplot(aes(x = pir_year, y = percent_bilingual_teachers_etc)) +
-  geom_line(color = "#E51937") +
-  scale_x_continuous(breaks = min(pir_a$pir_year):max(pir_a$pir_year)) +
-  scale_y_continuous(limits = c(25, 75)) +
-  labs(x = "Year",
-       y = "Percent of Multilingual Staff*", 
-       title = "Nearly Half of Head Start Staff* are Multilingual",
-       subtitle = "Head Start Program Information Report, MA, 2021-2025",
-       caption = "*'Staff' includes teachers, assistant teachers, home visitors, and family childcare providers") +
-  theme_minimal()
-```
 
