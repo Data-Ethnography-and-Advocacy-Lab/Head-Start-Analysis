@@ -127,20 +127,50 @@ list(
 
 ```{r}
 #| fill: false
-# note: make this temporal
-ma_pums_recoded |>
-  filter(OCCP == 2300 | OCCP == 4600) |>
-  group_by(LANX_label) |>
-  summarize(percent = n() / 623 * 100) |>
-  ggplot(aes(x = LANX_label,
-             y = percent)) + 
-  geom_col(na.rm = TRUE) +
-  scale_y_continuous(limits = c(0, 100)) +
-  labs(x = "",
-       y = "Percent of Teachers/Childcare Workers",
-       title = "Childcare Workers, Pre-K & Kindergarten Teacher Languages in MA") +
-  theme_minimal() +
-  theme(title = element_text(size = 9))
+ma_earlyed_2024 <- ma_pums_recoded |>
+  filter(OCCP == 2300 | OCCP == 4600)
+ma_earlyed_2023 <- ma_pums_2023 |>
+  filter(OCCP == 2300 | OCCP == 4600)
+ma_earlyed_2022 <- ma_pums_2022 |>
+  filter(OCCP == 2300 | OCCP == 4600)
+ma_earlyed_2021 <- ma_pums_2021 |>
+  filter(OCCP == 2300 | OCCP == 4600)
+
+summary_2021 <- ma_earlyed_2021 |>
+  filter(LANX == 1) |>
+  summarize(prop = n()/ 581)
+summary_2022 <- ma_earlyed_2022 |>
+  filter(LANX == 1) |>
+  summarize(prop = n()/ 614)
+summary_2023 <- ma_earlyed_2023 |>
+  filter(LANX == 1) |>
+  summarize(prop = n()/ 580)
+summary_2024 <- ma_earlyed_2021 |>
+  filter(LANX == 1) |>
+  summarize(prop = n()/ 623)
+
+ma_multilang_temporal <- data.frame(
+  year = c(2021, 2022, 2023, 2024),
+  prop_multilingual = c(summary_2021$prop, summary_2022$prop, summary_2023$prop, summary_2024$prop) 
+)
+
+ma_multilang_temporal |>
+  ggplot(aes(x = year, 
+             y = prop_multilingual)) +
+  geom_line() +
+  scale_x_continuous() +
+  scale_y_continuous() +
+  scale_color_manual(values = hs_palette) +
+  labs(x = "Year", 
+       y = "% Multilingual Early Educator",
+       col = "",
+       title = paste("Homeless Population via Grade 1 Proxy, ",
+                     min(ed_totals_under_5$YEAR_END), 
+                     "-" , 
+                     max(ed_totals_under_5$YEAR_END))) +
+  theme_minimal()  +
+  geom_text(aes(label = round(percent_homeless, 2)), 
+            vjust = -0.25)
 ```
 
 ```{r}

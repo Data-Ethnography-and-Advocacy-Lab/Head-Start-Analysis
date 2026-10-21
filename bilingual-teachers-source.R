@@ -70,11 +70,3 @@ ma_pums_2023 <-
     survey = "acs1",
     year = 2023,
     recode = TRUE)
-
-ma_pums_2025 <-
-  get_pums(
-    variables = c("OCCP", "LANX"),
-    state = "MA",
-    survey = "acs1",
-    year = 2025,
-    recode = TRUE)
