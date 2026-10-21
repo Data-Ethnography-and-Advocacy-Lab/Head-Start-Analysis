@@ -70,3 +70,35 @@ ma_pums_2023 <-
     survey = "acs1",
     year = 2023,
     recode = TRUE)
+
+pums_recoded_2024 <- get_pums(
+  variables = c("OCCP", "LANX"),
+  state = "all",
+  survey = "acs1",
+  year = 2024,
+  recode = TRUE
+)
+
+pums_recoded_2023 <- get_pums(
+  variables = c("OCCP", "LANX"),
+  state = "all",
+  survey = "acs1",
+  year = 2023,
+  recode = TRUE
+)
+
+pums_recoded_2022 <- get_pums(
+  variables = c("OCCP", "LANX"),
+  state = "all",
+  survey = "acs1",
+  year = 2022,
+  recode = TRUE
+)
+
+pums_recoded_2021 <- get_pums(
+  variables = c("OCCP", "LANX"),
+  state = "all",
+  survey = "acs1",
+  year = 2021,
+  recode = TRUE
+)

@@ -124,13 +124,21 @@ list(
 # for total in ma, acs1 vs acs5? and 2020 isn't in acs1
 ```
 
+```{r}
+earlyed_2024 <- pums_recoded_2024 |>
+  filter(OCCP == 2300 | OCCP == 4600) |>
+  summarize(total_educators = n(),
+            multilingual_educators = n(LANX == 1))
+```
 
 ```{r}
 #| fill: false
 
 #note: make this into a function to do other states
-ma_earlyed_2024 <- ma_pums_recoded |>
-  filter(OCCP == 2300 | OCCP == 4600)
+earlyed_2024 <- pums_recoded_2024 |>
+  filter(OCCP == 2300 | OCCP == 4600) 
+
+
 ma_earlyed_2023 <- ma_pums_2023 |>
   filter(OCCP == 2300 | OCCP == 4600)
 ma_earlyed_2022 <- ma_pums_2022 |>
