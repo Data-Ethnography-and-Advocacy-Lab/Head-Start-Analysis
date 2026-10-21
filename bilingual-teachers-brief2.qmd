@@ -120,3 +120,25 @@ list(
 ```
 
 ## Temporal Visualizations
+```{r}
+# for total in ma, data in acs1 only goes 2025-2021 then 2019-2017 but acs 5 (for population) is 2024, 2020, 2016, 2012?
+```
+
+
+```{r}
+#| fill: false
+ma_pums_recoded |>
+  filter(OCCP == 2300 | OCCP == 4600) |>
+  filter(LANX == 1) |>
+  summarize(percent = n() / 623 * 100) |>
+  ggplot(aes(x = LANX,
+             y = percent)) + 
+  geom_col(na.rm = TRUE) +
+  scale_y_continuous(limits = c(0, 100)) +
+  labs(x = "",
+       y = "Percent of Teachers/Childcare Workers",
+       title = "Childcare Workers, Pre-K & Kindergarten Teacher Languages in MA") +
+  theme_minimal() +
+  theme(title = element_text(size = 9))
+```
+
