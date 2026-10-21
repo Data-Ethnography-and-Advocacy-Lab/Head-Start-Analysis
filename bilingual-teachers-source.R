@@ -46,14 +46,3 @@ ma_pums_recoded <- get_pums(
   year = 2024,
   recode = TRUE
 )
-
-years_acs1 <- list(2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023, 2024, 2025)
-
-ma_pums_recoded_all <- map_dfr(years_acs1,
-                               ~ get_pums(
-  variables = c("OCCP", "LANX"),
-  state = "MA",
-  survey = "acs1",
-  year = .x,
-  recode = TRUE),
-.id = "pums_year")

@@ -47,7 +47,6 @@ teacher_lang_summary <- ma_pums_recoded |>
   filter(OCCP == 2300 | OCCP == 4600) |>
   filter(LANX == 1) |>
   summarize(prop = n() / 623)
-ma_percent_multi_preketc <- teacher_lang_summary$prop
 ```
 
 To calculate the percentage below, I divided the answers to question B.14 by the sum totals of the answers to questions B.3-1, B.3-2, B.6, B.8, and B.9. This decision was based on the ChildPlus PIR Calculation Guide 2025-2026, which includes a question B.15 called "Proficient in a Non-English Language". This question, "counts staff with a PIR Position of Classroom Teacher, Assistant Teacher, Home Visitor and FCC Provider. Any

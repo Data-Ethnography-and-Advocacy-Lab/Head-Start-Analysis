@@ -1,4 +1,122 @@
 ---
-title: "bilingual-teachers-brief2"
-format: html
+title: "MA Head Start Bilingual Teachers Data Brief"
+subtitle: "Data Ethnography and Advocacy Lab, 2026"
+author: "FILL"
+editor: source
+execute:
+  echo: false
+  messages: false
+  warnings: false
+format: 
+  dashboard:
+    scrolling: true
+    theme: zephyr
 ---
+```{r}
+library(tidyverse)
+library(ggrepel)
+library(knitr)
+library(leaflet)
+library(tigris)
+library(sf)
+library(htmltools)
+
+options(tidyverse.quiet = TRUE)
+
+source("pir_source.R")
+source("bilingual-teachers-source.R")
+hs_palette <- c("#e51937","#0063a6","#fff13b","#499f68","#84dcc6","#693668","#373d20","#717744")
+```
+
+## Bilingual Teachers in MA in 2024
+
+```{r}
+#| content: valuebox
+#| title: "Total number of childcare workers and pre-k and kindergarten teachers that speak a language other than English in MA (estimate)"
+
+teacher_lang_summary <- ma_pums_recoded |>
+  filter(OCCP == 2300 | OCCP == 4600) |>
+  filter(LANX == 1) |>
+  summarize(prop = n() / 623)
+
+teacher_summary <- ma_pums_recoded |>
+  filter(OCCP == 2300 | OCCP == 4600) |>
+  summarize(prop = n() / 74617)
+
+total_teacher_est <- total_pop_ma$estimate[[1]] * teacher_summary$prop
+
+total_bilingual_teacher_est <- total_teacher_est * teacher_lang_summary$prop
+
+list(
+  icon = "hash",
+  color = "info",
+  value = round(total_bilingual_teacher_est)
+)
+```
+
+```{r}
+#| content: valuebox
+#| title: "Proportion of childcare workers and pre-k and kindergarten teachers that speak a language other than English in MA"
+
+list(
+  icon = "percent",
+  color = "info",
+  value = round(teacher_lang_summary$prop, 2)
+)
+```
+
+## Head Start Bilingual Teachers, MA, 2024
+```{r}
+#| content: valuebox
+#| title: "Total Number of Biliingual Teachers, Assistant Teachers, Home Visitors, and FCC Providers at Head Start in MA"
+
+bilingual_hs <- pir_b |>
+  filter(State == "MA") |>
+  filter(pir_year == 2024) |>
+  summarize(bilingual_teachers = sum(B.14))
+
+list(
+  icon = "hash",
+  color = "info",
+  value = bilingual_hs$bilingual_teachers
+)
+```
+
+```{r}
+#| content: valuebox
+#| title: "Precent of Teachers, Assistant Teachers, Home Visitors, and FCC Providers That Are Bilingual at Head Start in MA"
+
+hs_staff_summary <- pir_b |>
+  filter(State == "MA") |>
+  filter(pir_year == 2024) |>
+  summarize(bilingual_teachers_etc = sum(B.14, na.rm = TRUE),
+            total_preschool_classroom = sum(`B.3-1`, na.rm = TRUE),
+            total_preschool_asst = sum(`B.3-2`, na.rm = TRUE),
+            total_infant_toddler_teacher = sum(B.6, na.rm = TRUE),
+            total_home_visitor = sum(B.8, na.rm = TRUE),
+            total_FCC = sum(B.9, na.rm = TRUE),
+            denom = (total_preschool_classroom + total_preschool_asst + total_infant_toddler_teacher + total_home_visitor + total_FCC),
+            percent_bilingual_teachers_etc = bilingual_teachers_etc / denom)
+
+
+list(
+  icon = "percent",
+  color = "info",
+  value = round(hs_staff_summary$percent_bilingual_teachers_etc, 2)
+)
+```
+
+```{r}
+#| content: valuebox
+#| title: "Proportion of childcare workers and pre-k and kindergarten teachers that speak a language other than English employed at Head Start in MA"
+
+prop_at_hs <- bilingual_hs$bilingual_teachers / total_bilingual_teacher_est
+
+list(
+  icon = "percent",
+  color = "info",
+  value = round(prop_at_hs, 2)
+)
+```
+
+## Temporal Visualizations
