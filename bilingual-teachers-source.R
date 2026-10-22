@@ -47,30 +47,6 @@ ma_pums_recoded <- get_pums(
   recode = TRUE
 )
 
-ma_pums_2021 <-
-  get_pums(
-    variables = c("OCCP", "LANX"),
-    state = "MA",
-    survey = "acs1",
-    year = 2021,
-    recode = TRUE)
-
-ma_pums_2022 <-
-  get_pums(
-    variables = c("OCCP", "LANX"),
-    state = "MA",
-    survey = "acs1",
-    year = 2022,
-    recode = TRUE)
-
-ma_pums_2023 <-
-  get_pums(
-    variables = c("OCCP", "LANX"),
-    state = "MA",
-    survey = "acs1",
-    year = 2023,
-    recode = TRUE)
-
 pums_recoded_2024 <- get_pums(
   variables = c("OCCP", "LANX"),
   state = "all",
