@@ -202,9 +202,9 @@ non_e_517[4, "year"] <- as.character("2008-2012")
 library(readxl)
 
 #using this temporarily because Lindsay's code for the path wasn't working
-my_file_path <- file.choose()
+file_path <- file.choose()
 
-child_pop <- read_excel(my_file_path, .name_repair = make.names) |>
+child_pop <- read_excel(file_path, .name_repair = make.names) |>
   mutate(TimeFrame = as.numeric(TimeFrame),
          Data = as.numeric(Data),
          Location = toupper(Location)) |>
@@ -301,24 +301,26 @@ headstart_dll_states <- pir_a |>
 headstart_total <- sum(headstart_dll_states[4,2])
 headstart_dll <- sum(headstart_dll_states[4,3])
 
-ma_child_pop_2125 <- ma_child_pop[ma_child_pop$TimeFrame >= 2021 & ma_child_pop$TimeFrame <= 2025, ]
-ma_agechart2125 <- aggregate(Data ~ Single.Age, data = ma_child_pop_2125, FUN = sum, na.rm = TRUE)
+child_pop_21_24 <- child_pop[child_pop$TimeFrame %in% 2021:2024,]
+ma_child_pop_21_24 <- child_pop_21_24 |>
+  filter(Location == "MASSACHUSETTS")
+ma_agechart_2124 <- aggregate(Data ~ Single.Age + TimeFrame, data = ma_child_pop_21_24, FUN = sum, na.rm = TRUE)
 
-ma_agechart2125 <- ma_agechart2125 |>
-  mutate(proxy_percent24 = Data * 0.2173485)
-ma_agechart2125 <- ma_agechart2125 |>
-  mutate(proxy_percent20 = Data * 0.2198973)
-ma_agechart2125 <- ma_agechart2125 |>
-  mutate(proxy_percent16 = Data * 0.2203787)
-ma_agechart2125 <- ma_agechart2125 |>
-  mutate(proxy_percent12 = Data * 0.2161038)
+ma_agechart_2124 <- ma_agechart_2124 |>
+  mutate(proxy_24 = Data * 0.2436643)
+ma_agechart_2124 <- ma_agechart_2124 |>
+  mutate(proxy_20 = Data * 0.2334502)
+ma_agechart_2124 <- ma_agechart_2124 |>
+  mutate(proxy_16 = Data * 0.2203640)
+ma_agechart_2124 <- ma_agechart_2124 |>
+  mutate(proxy_12 = Data * 0.2100803)
 
-ggplot(agechart, aes(x = year, y = percent_bilingual, group = 1)) +
-  geom_line() + 
-  labs(x = "ACS 5 Year Survey Range", 
-       y = "% MA Bilingual Population",
-       title = "Percent Bilingual Population, Massachusetts, 2008-2024") +
-  theme_minimal() 
+ma_agechart_2124_groups <- aggregate(
+  cbind(Data, proxy_24) ~ TimeFrame,
+  data = ma_agechart_2124,
+  FUN = sum,
+  na.rm = TRUE) |>
+  mutate(percentdll = proxy_24/Data)
 ```
 
 #Headline Statistics (for 2024)
@@ -343,8 +345,19 @@ print(headstart_dll/headstart_total)
 
 #Temporal Visualizations
 ```{r}
-# 1. Statewide proportion of dual language learners aged 0-5
+# 1. Statewide proportion of dual language learners aged 0-5 (2021-2024)
+ggplot(ma_agechart_2124_groups, aes(x = TimeFrame, y = proxy_24, group = 1)) +
+  geom_line() + 
+  labs(x = "Year", 
+       y = "Statewide Proportion of Dual Language Learners",
+       title = "Statewide Proportion of Dual Language Learners, Massachusetts, 2021-2024") +
+  theme_minimal() 
 
+# 2. Proportion of statewide total covered by Head Start
+# dll head start/dll total
+
+# 3. Proportion of Head Start children that are dual language learners
+#dll/total headstart
 
 ```
 
