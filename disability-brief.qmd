@@ -222,3 +222,87 @@ disability_under_5 |>
             vjust = -0.25)
 
 ```
+
+
+## Rankings
+
+
+```{r}
+#| content: valuebox
+#| title: "How MA ranks against other states in terms of percent of children enrolled in Head Start receiving disablity services"
+#| fill: false
+
+disablity_state_rank <- combined_pir |>
+  group_by(pir_year, State) |>
+  summarize(disabled_children = sum(C.24, na.rm = TRUE) + sum(C.25, na.rm = TRUE),
+            total_child_enroll = sum(A.10.g, na.rm = TRUE),
+      percent_disabled = round(disabled_children / total_child_enroll * 100, 2)) |>
+  ungroup() |>
+  group_by(pir_year) |>
+  mutate(state_rank = rank(-percent_disabled, ties.method = "min")) |>
+  ungroup()
+
+ma_ranking <- disablity_state_rank |>
+  filter(State == "MA" & pir_year == 2024) |>
+  select(state_rank) |>
+  pull()
+
+list(
+  icon = "award",
+  color = "info",
+  value = ma_ranking
+)
+```
+
+
+```{r}
+#| fill: false
+#| title: "Top 5 States + MA in terms of percent of children enrolled in Head Start that are receiving disablity services"
+disablity_state_rank |>
+  filter(pir_year == 2024 & (State == "MA" | state_rank <= 5)) |>
+  arrange(desc(percent_disabled)) |>
+  select(State, 
+         `% receiving disablity services` = percent_disabled ) |>
+  kable()
+```
+
+```{r}
+#| fill: false
+
+us_states <- states(cb = TRUE, 
+                    resolution = "20m", 
+                    progress_bar = FALSE) |>
+  left_join(disablity_state_rank |>
+              filter(pir_year == 2024), by = c("STUSPS" = "State")) |>
+  st_transform(4326)
+
+labels <- paste("<strong>", 
+                us_states$NAME,
+                "</strong><br>Rank:", 
+                us_states$state_rank,
+                "<br>% receiving disablity services:",
+                us_states$percent_disabled) |>
+  lapply(htmltools::HTML)
+
+pal_bin_state_rank <- colorBin(palette="BuGn", 
+                    domain = us_states$percent_disabled,
+                    bins = 4)
+
+disability_hs_map <- leaflet(width = "100%") %>%
+  setView(lat = 30, lng = -95, zoom = 3) %>%
+  addProviderTiles(providers$Esri.NatGeoWorldMap) |> 
+  addPolygons(data = us_states, 
+              weight = 1,
+              color = "black",
+              fillColor = ~pal_bin_state_rank(percent_disabled),
+              fillOpacity = 0.8, 
+              label = labels) |>
+  addLegend(data = us_states,
+            title = "% Receiving Disablity Services", 
+            pal = pal_bin_state_rank, 
+            values = ~percent_disabled)
+
+disability_hs_map
+```
+
+
