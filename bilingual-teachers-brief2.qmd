@@ -352,7 +352,8 @@ multilingual_staff_rank |>
   filter((State == "MA" | state_rank <= 5)) |>
   arrange(desc(percent_bilingual_teachers_etc)) |>
   select(State, 
-         `% Multilingual Staff` =  percent_bilingual_teachers_etc) |>
+         `% Staff Speak Another Language` =  percent_bilingual_teachers_etc,
+         `Total Staff Speak Another Language` = bilingual_teachers_etc) |>
   kable()
 ```
 
@@ -390,5 +391,27 @@ staff_hs_map <- leaflet(width = "100%") %>%
             values = ~percent_bilingual_teachers_etc)
 
 staff_hs_map
+```
+
+## Appendix {.appendix}
+```{r}
+pir_b |>
+  filter(pir_year == 2024) |>
+  group_by(State) |>
+  summarize(total_staff = sum(`B.1-1`),
+    bilingual_teachers_etc = sum(B.14, na.rm = TRUE),
+            total_preschool_classroom = sum(`B.3-1`, na.rm = TRUE),
+            total_preschool_asst = sum(`B.3-2`, na.rm = TRUE),
+            total_infant_toddler_teacher = sum(B.6, na.rm = TRUE),
+            total_home_visitor = sum(B.8, na.rm = TRUE),
+            total_FCC = sum(B.9, na.rm = TRUE),
+            denom = (total_preschool_classroom + total_preschool_asst + total_infant_toddler_teacher + total_home_visitor + total_FCC),
+            percent_bilingual_teachers_etc = bilingual_teachers_etc / denom * 100) |>
+  mutate(state_rank = rank(-percent_bilingual_teachers_etc, ties.method = "min")) |>
+  select(State, 
+         `% Staff Speak Another Language` =  percent_bilingual_teachers_etc,
+         `Total Staff Speak Another Language` = bilingual_teachers_etc,
+         `Total Staff` = total_staff)|>
+  kable()
 ```
 
