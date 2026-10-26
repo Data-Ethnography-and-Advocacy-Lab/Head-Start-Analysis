@@ -13,6 +13,8 @@ format:
     theme: zephyr
 ---
 ```{r}
+# note to self: check proportions vs percents
+
 library(tidyverse)
 library(ggrepel)
 library(knitr)
@@ -279,5 +281,36 @@ bilingual_vs_total$prop_earlyed <- prop_earlyed
 
 bilingual_vs_total <- bilingual_vs_total |>
   mutate(est_total_bilingual_earlyed = estimate * prop_earlyed * percent_bilingual / 100)
+
+hs <- pir_b |>
+  filter(pir_year != 2025) |>
+  mutate(is_ma = case_when(State == "MA" ~ "MA",
+                           State != "MA" ~ "Other States")) |>
+  group_by(pir_year, is_ma) |>
+  filter(!is.na(is_ma)) |>
+  summarize(bilingual_teachers_etc = sum(B.14, na.rm = TRUE)) |>
+              ungroup() |>
+  group_by(pir_year) |>
+  mutate(is_ma = case_when(is_ma == "MA" ~ "MA",
+                           is_ma != "MA" ~ "USA"),
+         bilingual_teachers_etc = case_when(is_ma == "MA" ~ bilingual_teachers_etc,
+                           is_ma == "USA" ~ sum(bilingual_teachers_etc, na.rm = TRUE))) |>
+  rename(year = pir_year)
+
+bilingual_vs_total <- left_join(bilingual_vs_total, hs)
+bilingual_vs_total <- bilingual_vs_total |>
+  mutate(percent_served = bilingual_teachers_etc / est_total_bilingual_earlyed * 100)
+
+bilingual_vs_total |>
+  ggplot(aes(x = year, y = percent_served, col = is_ma, group = is_ma)) +
+  geom_line() +
+  scale_x_continuous(breaks = min(year):max(year)) +
+    scale_color_manual(values = hs_palette) +
+  labs(x = "Year",
+       y = "Percent of Bilingual Early Educators Working At HS*", 
+       title = "*",
+       subtitle = "American Community Survey, American Community Survey Public Use Microdata Sample, Head Start Program Information Report, 2021-2025",
+       caption = "*") +
+  theme_minimal()
 ```
 
