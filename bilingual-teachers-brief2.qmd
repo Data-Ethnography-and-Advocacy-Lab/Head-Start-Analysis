@@ -308,9 +308,8 @@ bilingual_vs_total |>
     scale_color_manual(values = hs_palette) +
   labs(x = "Year",
        y = "Percent of Bilingual Early Educators Working At HS*", 
-       title = "*",
-       subtitle = "American Community Survey, American Community Survey Public Use Microdata Sample, Head Start Program Information Report, 2021-2025",
-       caption = "*") +
+       title = "Percent of Bilingual Early Educators Working at Head Start, 2021-2024*",
+       subtitle = "American Community Survey, American Community Survey Public Use Microdata Sample, Head Start Program Information Report, 2021-2025") +
   theme_minimal()
 ```
 
