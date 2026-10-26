@@ -406,12 +406,14 @@ pir_b |>
             total_home_visitor = sum(B.8, na.rm = TRUE),
             total_FCC = sum(B.9, na.rm = TRUE),
             denom = (total_preschool_classroom + total_preschool_asst + total_infant_toddler_teacher + total_home_visitor + total_FCC),
-            percent_bilingual_teachers_etc = bilingual_teachers_etc / denom * 100) |>
+            percent_bilingual_teachers_etc = bilingual_teachers_etc / denom * 100,
+    total_programs = n()) |>
   mutate(state_rank = rank(-percent_bilingual_teachers_etc, ties.method = "min")) |>
   select(State, 
          `% Staff Speak Another Language` =  percent_bilingual_teachers_etc,
          `Total Staff Speak Another Language` = bilingual_teachers_etc,
-         `Total Staff` = total_staff)|>
+         `Total Staff` = total_staff,
+         `Total Programs` = total_programs)|>
   kable()
 ```
 
