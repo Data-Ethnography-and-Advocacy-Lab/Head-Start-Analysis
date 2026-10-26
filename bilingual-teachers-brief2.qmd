@@ -251,6 +251,8 @@ total_pop_by_year <-
     survey = "acs1"),
   .id = "year")
 
+
+
 ma_vs_usa_pop <- dplyr::bind_rows(total_pop_by_year, total_pop_ma_acs1)
 
 ma_vs_usa_pop <- ma_vs_usa_pop |>
@@ -262,5 +264,20 @@ ma_vs_usa_pop <- ma_vs_usa_pop |>
                            GEOID == 25 ~ "MA"))
 
 bilingual_vs_total <- left_join(ma_vs_usa_pop, bilingual_ma_vs_usa)
+
+earlyeds_prop_usa_2021 <- nrow(earlyed_2021)/nrow(pums_recoded_2021) 
+earlyeds_prop_usa_2022 <- nrow(earlyed_2022)/nrow(pums_recoded_2022)
+earlyeds_prop_usa_2023 <- nrow(earlyed_2023)/nrow(pums_recoded_2023)
+earlyeds_prop_usa_2024 <- nrow(earlyed_2021)/nrow(pums_recoded_2024)
+earlyeds_prop_ma_2021 <- nrow(earlyed_2021["STATE" == 25])/nrow(pums_recoded_2021["ST" = 25])
+earlyeds_prop_ma_2022 <- nrow(earlyed_2022["STATE" == 25])/nrow(pums_recoded_2022["ST" = 25])
+earlyeds_prop_ma_2023 <- nrow(earlyed_2023["STATE" == 25])/nrow(pums_recoded_2023["STATE" = 25])
+earlyeds_prop_ma_2024 <- nrow(earlyed_2024["STATE" == 25])/nrow(pums_recoded_2024["STATE" = 25])
+prop_earlyed <- c(earlyeds_prop_usa_2021, earlyeds_prop_usa_2022, earlyeds_prop_usa_2023, earlyeds_prop_usa_2024, earlyeds_prop_ma_2021, earlyeds_prop_ma_2023, earlyeds_prop_ma_2022, earlyeds_prop_ma_2021)
+
+bilingual_vs_total$prop_earlyed <- prop_earlyed
+
+bilingual_vs_total <- bilingual_vs_total |>
+  mutate(est_total_bilingual_earlyed = estimate * prop_earlyed * percent_bilingual / 100)
 ```
 
