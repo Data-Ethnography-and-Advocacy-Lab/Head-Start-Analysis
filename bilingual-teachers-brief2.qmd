@@ -345,3 +345,50 @@ list(
 )
 ```
 
+```{r}
+#| fill: false
+#| title: "Top 5 States + MA in terms of percent of staff Head Start that speak another language"
+multilingual_staff_rank |>
+  filter((State == "MA" | state_rank <= 5)) |>
+  arrange(desc(percent_bilingual_teachers_etc)) |>
+  select(State, 
+         `% Multilingual Staff` =  percent_bilingual_teachers_etc) |>
+  kable()
+```
+
+```{r}
+us_states <- states(cb = TRUE, 
+                    resolution = "20m", 
+                    progress_bar = FALSE) |>
+  left_join(multilingual_staff_rank, by = c("STUSPS" = "State")) |>
+  st_transform(4326)
+
+labels <- paste("<strong>", 
+                us_states$NAME,
+                "</strong><br>Rank:", 
+                us_states$state_rank,
+                "<br>% Staff Speak Another Language:",
+                us_states$percent_bilingual_teachers_etc) |>
+  lapply(htmltools::HTML)
+
+pal_bin_state_rank <- colorBin(palette="BuGn", 
+                    domain = us_states$percent_bilingual_teachers_etc,
+                    bins = 5)
+
+staff_hs_map <- leaflet(width = "100%") %>%
+  setView(lat = 30, lng = -95, zoom = 3) %>%
+  addProviderTiles(providers$Esri.NatGeoWorldMap) |> 
+  addPolygons(data = us_states, 
+              weight = 1,
+              color = "black",
+              fillColor = ~pal_bin_state_rank(percent_bilingual_teachers_etc),
+              fillOpacity = 0.8, 
+              label = labels) |>
+  addLegend(data = us_states,
+            title = "% HS Staff Speak Another Language", 
+            pal = pal_bin_state_rank, 
+            values = ~percent_bilingual_teachers_etc)
+
+staff_hs_map
+```
+
