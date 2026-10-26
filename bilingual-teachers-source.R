@@ -91,3 +91,23 @@ pums_recoded_2021 <- get_pums(
   year = 2021,
   recode = TRUE
 )
+
+total_pop_ma_acs1 <- 
+  map_dfr(
+    acs1_years,
+    ~ get_acs(
+      geography = "state", 
+      variables = "B01003_001", 
+      year = .x, 
+      survey = "acs1",
+      state = "MA"),
+    .id = "year")
+total_pop_by_year <-
+  map_dfr(
+    acs1_years,
+    ~ get_acs(
+      geography = "us", 
+      variables = "B01003_001", 
+      year = .x, 
+      survey = "acs1"),
+    .id = "year")

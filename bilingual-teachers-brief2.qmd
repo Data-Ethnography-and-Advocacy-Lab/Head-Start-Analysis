@@ -13,8 +13,6 @@ format:
     theme: zephyr
 ---
 ```{r}
-# note to self: check proportions vs percents
-
 library(tidyverse)
 library(ggrepel)
 library(knitr)
@@ -63,7 +61,7 @@ list(
 list(
   icon = "percent",
   color = "info",
-  value = round(teacher_lang_summary$prop, 2)
+  value = round(teacher_lang_summary$prop * 100, 2)
 )
 ```
 
@@ -231,29 +229,6 @@ bilingual_ma_vs_usa <- combined_earlyed |>
          total_bilingual = case_when(is_ma == "MA" ~ total_bilingual,
                            is_ma == "USA" ~ sum(total_bilingual)),
           percent_bilingual = total_bilingual / total_earlyeds * 100)
-
-#move these to source
-total_pop_ma_acs1 <- 
-  map_dfr(
-  acs1_years,
-  ~ get_acs(
-    geography = "state", 
-    variables = "B01003_001", 
-    year = .x, 
-    survey = "acs1",
-    state = "MA"),
-  .id = "year")
-total_pop_by_year <-
-  map_dfr(
-  acs1_years,
-  ~ get_acs(
-    geography = "us", 
-    variables = "B01003_001", 
-    year = .x, 
-    survey = "acs1"),
-  .id = "year")
-
-
 
 ma_vs_usa_pop <- dplyr::bind_rows(total_pop_by_year, total_pop_ma_acs1)
 
