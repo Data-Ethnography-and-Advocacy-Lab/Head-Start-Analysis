@@ -121,17 +121,6 @@ list(
 
 ## Temporal Visualizations
 ```{r}
-# for total in ma, acs1 vs acs5? and 2020 isn't in acs1
-```
-
-```{r}
-earlyed_2024 <- pums_recoded_2024 |>
-  filter(OCCP == 2300 | OCCP == 4600) |>
-  summarize(total_educators = n(),
-            multilingual_educators = n(LANX == 1))
-```
-
-```{r}
 #| fill: false
 
 #note: make this into a function to do other states
@@ -146,12 +135,15 @@ earlyed_2022 <- pums_recoded_2022 |>
   mutate(year = 2022) |>
   rename(STATE = ST,
          STATE_label = ST_label)
-#earlyed_2021 <- pums_recoded_2021 |>
- # filter(OCCP == 2300 | OCCP == 4600)
+earlyed_2021 <- pums_recoded_2021 |>
+  filter(OCCP == 2300 | OCCP == 4600) |>
+  mutate(year = 2021) |>
+  rename(STATE = ST,
+         STATE_label = ST_label)
 
 # add column for year, join together, split into ma vs everywhere else, visualize
 
-combined_earlyed <- dplyr::bind_rows(earlyed_2024, earlyed_2023, earlyed_2022)
+combined_earlyed <- dplyr::bind_rows(earlyed_2024, earlyed_2023, earlyed_2022, earlyed_2021)
 
 combined_earlyed |>
   mutate(is_ma = case_when(STATE == 25 ~ "MA",
@@ -176,7 +168,7 @@ combined_earlyed |>
   labs(x = "Year",
        y = "Percent of Multilingual Early Educators", 
        title = "MA Has A Higher Proportion of Multilingual Early Educators, But That's Decreasing",
-       subtitle = "American Community Survey Public Use Microdata Sample, 2022-2024") +
+       subtitle = "American Community Survey Public Use Microdata Sample, 2021-2024") +
   theme_minimal()
 ```
 
@@ -214,3 +206,61 @@ pir_b |>
        caption = "*'Staff' includes teachers, assistant teachers, home visitors, and family childcare providers") +
   theme_minimal()
 ```
+
+```{r}
+#| fill: false
+
+#get pop of ma vs US for all years, multiply by percent early ed, multiply by percent bilingual, divide hs number by that number
+
+
+bilingual_ma_vs_usa <- combined_earlyed |>
+  mutate(is_ma = case_when(STATE == 25 ~ "MA",
+                           STATE != 25 ~ "Other States")) |>
+  group_by(year, is_ma) |>
+  filter(!is.na(is_ma)) |>
+  summarize(total_earlyeds = n(),
+            total_bilingual = sum(LANX == 1)) |>
+  ungroup() |>
+  group_by(year) |>
+  mutate(is_ma = case_when(is_ma == "MA" ~ "MA",
+                           is_ma != "MA" ~ "USA"),
+         total_earlyeds = case_when(is_ma == "MA" ~ total_earlyeds,
+                           is_ma == "USA" ~ sum(total_earlyeds, na.rm = TRUE)),
+         total_bilingual = case_when(is_ma == "MA" ~ total_bilingual,
+                           is_ma == "USA" ~ sum(total_bilingual)),
+          percent_bilingual = total_bilingual / total_earlyeds * 100)
+
+#move these to source
+total_pop_ma_acs1 <- 
+  map_dfr(
+  acs1_years,
+  ~ get_acs(
+    geography = "state", 
+    variables = "B01003_001", 
+    year = .x, 
+    survey = "acs1",
+    state = "MA"),
+  .id = "year")
+total_pop_by_year <-
+  map_dfr(
+  acs1_years,
+  ~ get_acs(
+    geography = "us", 
+    variables = "B01003_001", 
+    year = .x, 
+    survey = "acs1"),
+  .id = "year")
+
+ma_vs_usa_pop <- dplyr::bind_rows(total_pop_by_year, total_pop_ma_acs1)
+
+ma_vs_usa_pop <- ma_vs_usa_pop |>
+  mutate(year = case_when(year == 1 ~ 2021,
+                          year == 2 ~ 2022,
+                          year == 3 ~ 2023,
+                          year == 4 ~ 2024),
+         is_ma = case_when(GEOID == 1 ~ "USA",
+                           GEOID == 25 ~ "MA"))
+
+bilingual_vs_total <- left_join(ma_vs_usa_pop, bilingual_ma_vs_usa)
+```
+

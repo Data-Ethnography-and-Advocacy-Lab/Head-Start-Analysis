@@ -33,6 +33,19 @@ ma_2024_total <- total_pop_ma |>
 ma_2024_english_only <- english_only_pop_ma |>
   filter(year ==1)
 
+acs1_variables <- load_variables(2024, "acs1")
+
+acs1_years <- c(2021, 2022, 2023, 2024)
+
+total_pop_by_state <- map_dfr(
+  acs1_years,
+  ~ get_acs(
+    geography = "state", 
+    variables = "B01003_001", 
+    year = .x, 
+    survey = "acs1"),
+  .id = "year")
+
 pums_vars_2024 <- pums_variables |>
   filter(year == 2024, survey == "acs1")
 
