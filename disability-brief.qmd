@@ -33,7 +33,7 @@ hs_palette <- c("#e51937","#0063a6","#fff13b","#499f68","#84dcc6","#693668","#37
 
 ```{r}
 #| content: valuebox
-#| title: "Total number of infants and children 0-5 with a disability in MA"
+#| title: "Total number of infants and children 0-5 served under IDEA in MA"
 
 ma_disabled_total_2024 <- disability_under_5 |>
   filter(ST == "MA" & YEAR_END == 2024) |>
@@ -49,7 +49,7 @@ list(
 
 ```{r}
 #| content: valuebox
-#| title: "Proportion of the infants and children 0-5 with a disability in MA"
+#| title: "Proportion of the infants and children 0-5 served under IDEA in MA"
 
 ma_disabled_percent_2024 <- disability_under_5 |>
   filter(ST == "MA" & YEAR_END == 2024) |>
@@ -67,7 +67,7 @@ list(
 
 ```{r}
 #| content: valuebox
-#| title: "Total number of children with a disability that Head Start serves in MA"
+#| title: "Total number of children receiving IDEA services that Head Start serves in MA"
 
 ma_total_hs_disabled_2024 <- disability_under_5 |>
   filter(ST == "MA" & YEAR_END == 2024) |>
@@ -83,7 +83,7 @@ list(
 
 ```{r}
 #| content: valuebox
-#| title: "Percent of children enrolled in Head Start that have a disability in MA"
+#| title: "Percent of children enrolled in Head Start that receive IDEA services in MA"
 
 ma_percent_hs_disabled_2024 <- disability_under_5 |>
   filter(ST == "MA" & YEAR_END == 2024) |>
@@ -99,7 +99,7 @@ list(
 
 ```{r}
 #| content: valuebox
-#| title: "Percent of children with a disability in MA that Head Start serves"
+#| title: "Percent of children served under IDEA in MA that Head Start serves"
 
 ma_percent_hs_disabled_serves_2024 <- disability_under_5 |>
   filter(ST == "MA" & YEAR_END == 2024) |>
@@ -142,9 +142,9 @@ disability_under_5 |>
   scale_y_continuous() +
   scale_color_manual(values = hs_palette) +
   labs(x = "Year",
-       y = "% Children 0-5 with an IDEA Disability",
+       y = "% Children 0-5 Receiving IDEA Services",
        col = "",
-       title = "Children 0-5 with an IDEA Disability, 2021 - 2024") +
+       title = "Children 0-5 Receiving IDEA Services, 2021 - 2024") +
   theme_minimal() +
   geom_text(aes(label = round(percent_disabled, 2)),
             vjust = -0.25)
@@ -176,9 +176,9 @@ combined_pir |>
   scale_y_continuous() +
   scale_color_manual(values = hs_palette) +
   labs(x = "Year",
-       y = "% Enrolled Children with a Disability",
+       y = "% Enrolled Children Receiving IDEA Services",
        col = "",
-       title = paste("Head Start Disability Enrollments, ",
+       title = paste("Head Start IDEA Enrollments, ",
                      min(combined_pir$pir_year),
                      "-" ,
                      max(combined_pir$pir_year))) +
@@ -214,9 +214,9 @@ disability_under_5 |>
   scale_y_continuous() +
   scale_color_manual(values = hs_palette) +
   labs(x = "Year",
-       y = "% Disabled Children 0-5 Served by Head Start",
+       y = "% Children Receiving IDEA Services 0-5 Served by Head Start",
        col = "",
-       title = "Head Start Share of IDEA-Disabled Children 0-5, 2021 - 2024") +
+       title = "Head Start Share of IDEA Receiving Children 0-5, 2021 - 2024") +
   theme_minimal() +
   geom_text(aes(label = round(percent_served, 2)),
             vjust = -0.25)
@@ -229,7 +229,7 @@ disability_under_5 |>
 
 ```{r}
 #| content: valuebox
-#| title: "How MA ranks against other states in terms of percent of children enrolled in Head Start receiving disablity services"
+#| title: "How MA ranks against other states in terms of percent of children enrolled in Head Start receiving IDEA services"
 #| fill: false
 
 disablity_state_rank <- combined_pir |>
@@ -257,7 +257,7 @@ list(
 
 ```{r}
 #| fill: false
-#| title: "Top 5 States + MA in terms of percent of children enrolled in Head Start that are receiving disablity services"
+#| title: "Top 5 States + MA in terms of percent of children enrolled in Head Start that are receiving IDEA services"
 disablity_state_rank |>
   filter(pir_year == 2024 & (State == "MA" | state_rank <= 5)) |>
   arrange(desc(percent_disabled)) |>
@@ -298,7 +298,7 @@ disability_hs_map <- leaflet(width = "100%") %>%
               fillOpacity = 0.8, 
               label = labels) |>
   addLegend(data = us_states,
-            title = "% Receiving Disablity Services", 
+            title = "% Receiving IDEA Services", 
             pal = pal_bin_state_rank, 
             values = ~percent_disabled)
 
