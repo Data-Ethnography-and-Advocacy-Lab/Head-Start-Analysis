@@ -28,6 +28,8 @@ source("pir_source.R")
 source("disability_source.R")
 hs_palette <- c("#e51937","#0063a6","#fff13b","#499f68","#84dcc6","#693668","#373d20","#717744")
 ```
+## IDEA Overview
+IDEA, or the Individuals with Disabilities Education Act, is the law that ensures all children have access to education regardless of disability. This means that children served by IDEA are those who require early intervention (e.g., speech or occupational therapy), special education, or another disability-related service. 
 
 ## Disability in MA in 2024
 
