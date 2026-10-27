@@ -93,7 +93,7 @@ pums_recoded_2021 <- get_pums(
 )
 
 total_pop_ma_acs1 <- 
-  map_dfr(
+  purrr::map_dfr(
     acs1_years,
     ~ get_acs(
       geography = "state", 
@@ -102,8 +102,9 @@ total_pop_ma_acs1 <-
       survey = "acs1",
       state = "MA"),
     .id = "year")
+
 total_pop_by_year <-
-  map_dfr(
+  purrr::map_dfr(
     acs1_years,
     ~ get_acs(
       geography = "us", 
