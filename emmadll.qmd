@@ -1,6 +1,16 @@
 ---
-title: "emmadll"
-format: html
+title: "MA Head Start Dual Language Learners Data Brief"
+subtitle: "Data Ethnography and Advocacy Lab, 2026"
+author: "FILL"
+editor: source
+execute:
+  echo: false
+  messages: false
+  warnings: false
+format: 
+  dashboard:
+    scrolling: true
+    theme: zephyr
 ---
 ```{r}
 source("DLLCensusSource.R")
@@ -12,27 +22,131 @@ library(purrr)
 library(dplyr)
 library(ggplot2)
 library(scales)
+library(tidyverse)
+library(ggrepel)
+library(knitr)
+library(leaflet)
+library(tigris)
+library(sf)
+library(htmltools)
+
+options(tidyverse.quiet = TRUE)
+
+hs_palette <- c("#e51937","#0063a6","#fff13b","#499f68","#84dcc6","#693668","#373d20","#717744")
 ```
 
-#Headline Statistics (for 2024)
+## Headline Statistics (for 2024)
+
 ```{r}
-# 1. Statewide total dual language learners 0-5
-print(statewide_dll)
+#| content: valuebox
+#| title: "Total number of infants and children 0-5 that are DLL in MA"
 
-# 2. Statewide proportion of dual language learners aged 0-5
-print(statewide_percent)
+statewide_dll <- statewide_dll
 
-# 3. Statewide total dual language learners 0-5 served by Head Start
-print(headstart_dll)
+list(
+  icon = "hash",
+  color = "info",
+  value = round(statewide_dll, 0)
+)
+```
 
-# 4. Proportion of statewide total covered by Head Start
-print(headstart_dll/statewide_dll)
+```{r}
+#| content: valuebox
+#| title: "Proportion of the infants and children 0-5 that are DLL in MA"
 
-# 5. Proportion of Head Start children that are dual language learners
-print(headstart_dll/headstart_total)
+list(
+  icon = "percent",
+  color = "info",
+  value = round(statewide_percent, 2)
+)
+```
+
+## Second heading
+
+```{r}
+#| content: valuebox
+#| title: "Total number of DLL children that Head Start serves in MA"
+
+dll_hs <- headstart_dll_ma|>
+  filter(pir_year == 2024)
+headstart_dll <- dll_hs$total_dll_enroll
+
+list(
+  icon = "hash",
+  color = "info",
+  value = headstart_dll
+)
+```
+
+```{r}
+#| content: valuebox
+#| title: "Percent of children enrolled in Head Start that are DLL in MA"
+
+hsswdllprop <- headstart_dll/statewide_dll
+
+list(
+  icon = "hash",
+  color = "info",
+  value = round(hsswdllprop, 2)
+)
+```
+
+```{r}
+#| content: valuebox
+#| title: "Percent of dual language learners in MA that Head Start serves"
+
+headstart_total <- dll_hs$total_child_enroll
+
+hsdllprop <- headstart_dll/headstart_total
+
+list(
+  icon = "percent",
+  color = "info",
+  value = round(hsdllprop, 2)
+)
 ```
 
 #Temporal Visualizations
+
+```{r}
+#| fill: false
+
+options(scipen = 999)
+ed_totals_under_5 |>
+  mutate(is_ma = case_when(ST == "MA" ~ "MA",
+                           ST != "MA" ~ "Other States")) |>
+  group_by(YEAR_END, is_ma) |>
+  filter(!is.na(is_ma)) |>
+  summarize(homeless_children = sum(HOMELESS_UNDER_5_GRADE_1, na.rm = TRUE),
+            total_population = sum(POPULATION_UNDER_5, na.rm = TRUE)) |>
+  ungroup() |>
+  group_by(YEAR_END) |>
+  mutate(is_ma = case_when(is_ma == "MA" ~ "MA",
+                           is_ma != "MA" ~ "USA"),
+         homeless_children = case_when(is_ma == "MA" ~ homeless_children,
+                           is_ma == "USA" ~ sum(homeless_children, na.rm = TRUE)),
+         total_population = case_when(is_ma == "MA" ~ total_population,
+                           is_ma == "USA" ~ sum(total_population)),
+         ,
+      percent_homeless = homeless_children / total_population * 100) |>
+  ggplot(aes(x = YEAR_END, y = percent_homeless, col = is_ma, group = is_ma)) +
+  geom_line() +
+  scale_x_continuous() +
+  scale_y_continuous() +
+  scale_color_manual(values = hs_palette) +
+  labs(x = "Year", 
+       y = "% Homeless Children",
+       col = "",
+       title = paste("Homeless Population via Grade 1 Proxy, ",
+                     min(ed_totals_under_5$YEAR_END), 
+                     "-" , 
+                     max(ed_totals_under_5$YEAR_END))) +
+  theme_minimal()  +
+  geom_text(aes(label = round(percent_homeless, 2)), 
+            vjust = -0.25)
+
+```
+
 ```{r}
 # 1. Change in statewide proportion of dual language learners aged 0-5
 ggplot(non_e_517_ma, aes(x = year, y = percent_non_e, group = 1)) +

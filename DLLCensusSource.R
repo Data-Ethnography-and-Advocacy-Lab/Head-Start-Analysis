@@ -106,6 +106,7 @@ bilingual_pop_ma[2, "year"] <- as.character("2016-2020")
 bilingual_pop_ma[3, "year"] <- as.character("2012-2016")
 bilingual_pop_ma[4, "year"] <- as.character("2008-2012")
 
+#===
 ## Adding data from ACS B16007
 eo5_17 <- map_dfr(
   years,
@@ -148,8 +149,9 @@ non_e_517[4, "year"] <- as.character("2008-2012")
 
 ## Adding child pop
 
-child_pop_2025 <- child_pop[child_pop$TimeFrame == 2025,]
-agechart <- aggregate(Data ~ Single.Age, data = child_pop_2025, FUN = sum, na.rm = TRUE)
+child_pop_2024 <- child_pop[child_pop$TimeFrame == 2024,]
+agechart <- aggregate(Data ~ Location, data = child_pop_2024, FUN = sum, na.rm = TRUE) |>
+  arrange(desc(Data))
 
 agechart <- agechart |>
   mutate(proxy_percent24 = Data * 0.2173485)
@@ -160,8 +162,8 @@ agechart <- agechart |>
 agechart <- agechart |>
   mutate(proxy_percent12 = Data * 0.2161038)
 
+#===
 #doing the same thing for MA
-
 eo5_17_ma <- map_dfr(
   years,
   ~ get_acs(
@@ -217,7 +219,7 @@ ma_agechart <- ma_agechart |>
 ma_agechart <- ma_agechart |>
   mutate(proxy_percent12 = Data * 0.2100803)
 
-
+#===
 #headline stats code
 source("pir_source.R")
 
@@ -225,8 +227,16 @@ statewide_dll <- sum(ma_agechart$proxy_percent24)
 statewide_children <- sum(non_e_517_ma[1,7])
 statewide_percent <- statewide_dll/statewide_children
 
-headstart_dll_states <- pir_a |>
+headstart_dll_years <- pir_a |>
   group_by(pir_year) |>
+  summarize(total_child_enroll = sum(A.10.g, na.rm = TRUE), 
+            total_dll_enroll = sum(A.27, na.rm = TRUE),
+            percent_dll = total_dll_enroll / total_child_enroll * 100) |>
+  arrange(desc(percent_dll))
+
+headstart_dll_states <- pir_a |>
+  group_by(State) |>
+  filter(pir_year== 2024) |>
   summarize(total_child_enroll = sum(A.10.g, na.rm = TRUE), 
             total_dll_enroll = sum(A.27, na.rm = TRUE),
             percent_dll = total_dll_enroll / total_child_enroll * 100) |>
@@ -239,6 +249,8 @@ headstart_dll_ma <- pir_a |>
             total_dll_enroll = sum(A.27, na.rm = TRUE),
             percent_dll = total_dll_enroll / total_child_enroll * 100) |>
   arrange(desc(percent_dll))
+
+#===
 
 child_pop_21_24 <- child_pop[child_pop$TimeFrame %in% 2021:2024,]
 ma_child_pop_21_24 <- child_pop_21_24 |>
@@ -263,6 +275,8 @@ ma_agechart_2124_groups <- aggregate(
 ma_dllenroll <- left_join(ma_agechart_2124_groups, headstart_dll_ma, 
                            by = c("TimeFrame" = "pir_year"))|>
   mutate(dll_prop = total_dll_enroll/proxy_24)
+
+#===
 
 agechart_2124 <- aggregate(Data ~ Single.Age + TimeFrame, data = child_pop_21_24, 
                               FUN = sum, na.rm = TRUE)
