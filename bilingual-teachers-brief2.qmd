@@ -12,6 +12,7 @@ format:
     scrolling: true
     theme: zephyr
 ---
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
 ```{r}
 library(tidyverse)
 library(ggrepel)
@@ -45,7 +46,7 @@ teacher_summary <- ma_pums_recoded |>
 
 total_teacher_est <- total_pop_ma$estimate[[1]] * teacher_summary$prop
 
-total_bilingual_teacher_est <- total_teacher_est * teacher_lang_summary$prop
+total_bilingual_teacher_est <- total_teacher_est * teacher_lang_summary$prop * 100
 
 list(
   icon = "hash",
@@ -58,10 +59,12 @@ list(
 #| content: valuebox
 #| title: "Proportion of childcare workers and pre-k and kindergarten teachers that speak a language other than English in MA"
 
+teacher_lang_percent <- teacher_lang_summary$prop * 100
+
 list(
   icon = "percent",
   color = "info",
-  value = round(teacher_lang_summary$prop, 2)
+  value = round(teacher_lang_percent, 2)
 )
 ```
 
