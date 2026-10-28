@@ -1,0 +1,310 @@
+---
+title: "MA Head Start Disability Data Brief"
+subtitle: "Data Ethnography and Advocacy Lab, 2026"
+author: "FILL"
+editor: source
+execute:
+  echo: false
+  messages: false
+  warnings: false
+format: 
+  dashboard:
+    scrolling: true
+    theme: zephyr
+---
+
+```{r}
+library(tidyverse)
+library(ggrepel)
+library(knitr)
+library(leaflet)
+library(tigris)
+library(sf)
+library(htmltools)
+
+options(tidyverse.quiet = TRUE)
+
+source("pir_source.R")
+source("disability_source.R")
+hs_palette <- c("#e51937","#0063a6","#fff13b","#499f68","#84dcc6","#693668","#373d20","#717744")
+```
+## IDEA Overview
+IDEA, or the Individuals with Disabilities Education Act, is the law that ensures all children have access to education regardless of disability. This means that children served by IDEA are those who require early intervention (e.g., speech or occupational therapy), special education, or another disability-related service. 
+
+## Disability in MA in 2024
+
+```{r}
+#| content: valuebox
+#| title: "Total number of infants and children 0-5 served under IDEA in MA"
+
+ma_disabled_total_2024 <- disability_under_5 |>
+  filter(ST == "MA" & YEAR_END == 2024) |>
+  select(IDEA_DISABLED_0_5) |>
+  pull()
+
+list(
+  icon = "hash",
+  color = "info",
+  value = ma_disabled_total_2024
+)
+```
+
+```{r}
+#| content: valuebox
+#| title: "Proportion of the infants and children 0-5 served under IDEA in MA"
+
+ma_disabled_percent_2024 <- disability_under_5 |>
+  filter(ST == "MA" & YEAR_END == 2024) |>
+  select(STATEWIDE_PROP_DISABLED) |>
+  pull()
+
+list(
+  icon = "percent",
+  color = "info",
+  value = round(ma_disabled_percent_2024, 2)
+)
+```
+
+## Head Start Disability Support, MA, 2024
+
+```{r}
+#| content: valuebox
+#| title: "Total number of children receiving IDEA services that Head Start serves in MA"
+
+ma_total_hs_disabled_2024 <- disability_under_5 |>
+  filter(ST == "MA" & YEAR_END == 2024) |>
+  select(HS_DISABLED) |>
+  pull()
+
+list(
+  icon = "hash",
+  color = "info",
+  value = ma_total_hs_disabled_2024
+)
+```
+
+```{r}
+#| content: valuebox
+#| title: "Percent of children enrolled in Head Start that receive IDEA services in MA"
+
+ma_percent_hs_disabled_2024 <- disability_under_5 |>
+  filter(ST == "MA" & YEAR_END == 2024) |>
+  select(PERCENT_HS_DISABLED) |>
+  pull()
+
+list(
+  icon = "percent",
+  color = "info",
+  value = round(ma_percent_hs_disabled_2024, 2)
+)
+```
+
+```{r}
+#| content: valuebox
+#| title: "Percent of children served under IDEA in MA that Head Start serves"
+
+ma_percent_hs_disabled_serves_2024 <- disability_under_5 |>
+  filter(ST == "MA" & YEAR_END == 2024) |>
+  select(HS_SHARE_OF_STATE) |>
+  pull()
+
+list(
+  icon = "percent",
+  color = "info",
+  value = round(ma_percent_hs_disabled_serves_2024, 2)
+)
+```
+
+## Temporal Visualizations
+
+```{r}
+#| fill: false
+
+options(scipen = 999)
+disability_under_5 |>
+  filter(YEAR_END <= 2024) |>
+  mutate(is_ma = case_when(ST == "MA" ~ "MA",
+                           ST != "MA" ~ "Other States")) |>
+  group_by(YEAR_END, is_ma) |>
+  filter(!is.na(is_ma)) |>
+  summarize(disabled_children = sum(IDEA_DISABLED_0_5, na.rm = TRUE),
+            total_population = sum(POPULATION_UNDER_5, na.rm = TRUE)) |>
+  ungroup() |>
+  group_by(YEAR_END) |>
+  mutate(is_ma = case_when(is_ma == "MA" ~ "MA",
+                           is_ma != "MA" ~ "USA"),
+         disabled_children = case_when(is_ma == "MA" ~ disabled_children,
+                           is_ma == "USA" ~ sum(disabled_children, na.rm = TRUE)),
+         total_population = case_when(is_ma == "MA" ~ total_population,
+                           is_ma == "USA" ~ sum(total_population, na.rm = TRUE)),
+         percent_disabled = disabled_children / total_population * 100) |>
+  ggplot(aes(x = YEAR_END, y = percent_disabled, col = is_ma, group = is_ma)) +
+  geom_line() +
+  scale_x_continuous() +
+  scale_y_continuous() +
+  scale_color_manual(values = hs_palette) +
+  labs(x = "Year",
+       y = "% Children 0-5 Receiving IDEA Services",
+       col = "",
+       title = "Children 0-5 Receiving IDEA Services, 2021 - 2024") +
+  theme_minimal() +
+  geom_text(aes(label = round(percent_disabled, 2)),
+            vjust = -0.25)
+
+```
+
+```{r}
+#| fill: false
+
+combined_pir |>
+  mutate(is_ma = case_when(State == "MA" ~ "MA",
+                           State != "MA" ~ "Other States")) |>
+  group_by(pir_year, is_ma) |>
+  filter(!is.na(is_ma)) |>
+  summarize(disabled_children = sum(C.24, na.rm = TRUE) + sum(C.25, na.rm = TRUE),
+            total_child_enroll = sum(A.10.g, na.rm = TRUE)) |>
+  ungroup() |>
+  group_by(pir_year) |>
+  mutate(is_ma = case_when(is_ma == "MA" ~ "MA",
+                           is_ma != "MA" ~ "USA"),
+         disabled_children = case_when(is_ma == "MA" ~ disabled_children,
+                           is_ma == "USA" ~ sum(disabled_children, na.rm = TRUE)),
+         total_child_enroll = case_when(is_ma == "MA" ~ total_child_enroll,
+                           is_ma == "USA" ~ sum(total_child_enroll, na.rm = TRUE)),
+         percent_disabled = disabled_children / total_child_enroll * 100) |>
+  ggplot(aes(x = pir_year, y = percent_disabled, col = is_ma, group = is_ma)) +
+  geom_line() +
+  scale_x_continuous() +
+  scale_y_continuous() +
+  scale_color_manual(values = hs_palette) +
+  labs(x = "Year",
+       y = "% Enrolled Children Receiving IDEA Services",
+       col = "",
+       title = paste("Head Start IDEA Enrollments, ",
+                     min(combined_pir$pir_year),
+                     "-" ,
+                     max(combined_pir$pir_year))) +
+  theme_minimal() +
+  geom_text(aes(label = round(percent_disabled, 2)),
+            vjust = -0.25)
+
+```
+
+```{r}
+#| fill: false
+
+disability_under_5 |>
+  filter(YEAR_END <= 2024) |>
+  mutate(is_ma = case_when(ST == "MA" ~ "MA",
+                           ST != "MA" ~ "Other States")) |>
+  group_by(YEAR_END, is_ma) |>
+  filter(!is.na(is_ma)) |>
+  summarize(disabled_children = sum(IDEA_DISABLED_0_5, na.rm = TRUE),
+            hs_disabled = sum(HS_DISABLED, na.rm = TRUE)) |>
+  ungroup() |>
+  group_by(YEAR_END) |>
+  mutate(is_ma = case_when(is_ma == "MA" ~ "MA",
+                           is_ma != "MA" ~ "USA"),
+         disabled_children = case_when(is_ma == "MA" ~ disabled_children,
+                           is_ma == "USA" ~ sum(disabled_children, na.rm = TRUE)),
+         hs_disabled = case_when(is_ma == "MA" ~ hs_disabled,
+                           is_ma == "USA" ~ sum(hs_disabled, na.rm = TRUE)),
+         percent_served = hs_disabled / disabled_children * 100) |>
+  ggplot(aes(x = YEAR_END, y = percent_served, col = is_ma, group = is_ma)) +
+  geom_line() +
+  scale_x_continuous() +
+  scale_y_continuous() +
+  scale_color_manual(values = hs_palette) +
+  labs(x = "Year",
+       y = "% Children Receiving IDEA Services 0-5 Served by Head Start",
+       col = "",
+       title = "Head Start Share of IDEA Receiving Children 0-5, 2021 - 2024") +
+  theme_minimal() +
+  geom_text(aes(label = round(percent_served, 2)),
+            vjust = -0.25)
+
+```
+
+
+## Rankings
+
+
+```{r}
+#| content: valuebox
+#| title: "How MA ranks against other states in terms of percent of children enrolled in Head Start receiving IDEA services"
+#| fill: false
+
+disablity_state_rank <- combined_pir |>
+  group_by(pir_year, State) |>
+  summarize(disabled_children = sum(C.24, na.rm = TRUE) + sum(C.25, na.rm = TRUE),
+            total_child_enroll = sum(A.10.g, na.rm = TRUE),
+      percent_disabled = round(disabled_children / total_child_enroll * 100, 2)) |>
+  ungroup() |>
+  group_by(pir_year) |>
+  mutate(state_rank = rank(-percent_disabled, ties.method = "min")) |>
+  ungroup()
+
+ma_ranking <- disablity_state_rank |>
+  filter(State == "MA" & pir_year == 2024) |>
+  select(state_rank) |>
+  pull()
+
+list(
+  icon = "award",
+  color = "info",
+  value = ma_ranking
+)
+```
+
+
+```{r}
+#| fill: false
+#| title: "Top 5 States + MA in terms of percent of children enrolled in Head Start that are receiving IDEA services"
+disablity_state_rank |>
+  filter(pir_year == 2024 & (State == "MA" | state_rank <= 5)) |>
+  arrange(desc(percent_disabled)) |>
+  select(State, 
+         `% receiving disablity services` = percent_disabled ) |>
+  kable()
+```
+
+```{r}
+#| fill: false
+
+us_states <- states(cb = TRUE, 
+                    resolution = "20m", 
+                    progress_bar = FALSE) |>
+  left_join(disablity_state_rank |>
+              filter(pir_year == 2024), by = c("STUSPS" = "State")) |>
+  st_transform(4326)
+
+labels <- paste("<strong>", 
+                us_states$NAME,
+                "</strong><br>Rank:", 
+                us_states$state_rank,
+                "<br>% receiving disablity services:",
+                us_states$percent_disabled) |>
+  lapply(htmltools::HTML)
+
+pal_bin_state_rank <- colorBin(palette="BuGn", 
+                    domain = us_states$percent_disabled,
+                    bins = 4)
+
+disability_hs_map <- leaflet(width = "100%") %>%
+  setView(lat = 30, lng = -95, zoom = 3) %>%
+  addProviderTiles(providers$Esri.NatGeoWorldMap) |> 
+  addPolygons(data = us_states, 
+              weight = 1,
+              color = "black",
+              fillColor = ~pal_bin_state_rank(percent_disabled),
+              fillOpacity = 0.8, 
+              label = labels) |>
+  addLegend(data = us_states,
+            title = "% Receiving IDEA Services", 
+            pal = pal_bin_state_rank, 
+            values = ~percent_disabled)
+
+disability_hs_map
+```
+
+

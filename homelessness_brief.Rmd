@@ -26,7 +26,17 @@ library(ggrepel)
 source("pir_source.R")
 source("homeless_source.R")
 ```
+## Headline Statistics
 
+```{r}
+#| content: valuebox
+#| title: "Spam per day"
+list(
+  icon = "trash",
+  color = "danger",
+  value = spam
+)
+```
 ```{r}
 options(scipen = 999)
 combined_pir |>

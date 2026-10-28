@@ -80,13 +80,16 @@ ed_totals_under_5 <- ed_totals_grade_1 |>
   summarize(
     POPULATION_UNDER_5 = sum(POPULATION_BY_AGE),
     HOMELESS_UNDER_5_GRADE_1 = sum(TOTAL_HOMELESS_BY_AGE)) |>
+  ungroup() |>
+  mutate(PERCENT_UNDER_5_HOMELESS = HOMELESS_UNDER_5_GRADE_1 / POPULATION_UNDER_5 * 100) |>
   left_join(ed_homeless_young, by = c("STATENAME" = "State", "YEAR_END" = "YEAR_END")) |>
   mutate(PIVOT_COL_NAME = case_when(Indicator == "age 3 through 5 (not kindergarten) - 655" ~ "HOMELESS_3_5_655", 
                                     Indicator == "age birth through 5 (not kindergarten) - 818" ~ "HOMELESS_0_5_818")) |>
   select(-Indicator, -Data.Description) |>
   pivot_wider(names_from = PIVOT_COL_NAME,
               values_from = Value) |>
-  left_join(hs_homeless_by_state, by = c("ST" = "State", "YEAR_END" = "pir_year"))
+  left_join(hs_homeless_by_state, by = c("ST" = "State", "YEAR_END" = "pir_year")) |>
+  mutate(PERCENT_HOMELESS_POP_HS = TOTAL_HS_HOMELESS_ENROLL/HOMELESS_UNDER_5_GRADE_1 * 100)
 
 ed_totals_under_5_char <- ed_totals_under_5 |>
   left_join(ed_homeless_char |> select(2, 5, 7, 8), by = c("STATENAME" = "State", "YEAR_END" = "YEAR_END")) |>

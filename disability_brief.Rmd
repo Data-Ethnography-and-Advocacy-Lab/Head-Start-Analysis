@@ -22,7 +22,10 @@ execute:
 library(tidyverse)
 
 source("pir_source.R")
+source("disability_source.R")
 ```
+
+# Exploratory Data Analysis
 
 ## Disability Enrollment in MA vs Other States
 
