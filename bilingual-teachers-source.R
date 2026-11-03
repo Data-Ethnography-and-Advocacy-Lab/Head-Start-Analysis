@@ -71,39 +71,43 @@ if (OS == "unix"){
   print("ERROR: OS could not be identified")
 }
 
+
 pums_recoded_2024 <- read_csv(paste0(temp_path, "pums_recoded_2024.csv"), name_repair = make.names)
+pums_recoded_2023 <- read_csv(paste0(temp_path, "pums_recoded_2023.csv"), name_repair = make.names)
+pums_recoded_2022 <- read_csv(paste0(temp_path, "pums_recoded_2022.csv"), name_repair = make.names)
+pums_recoded_2021 <- read_csv(paste0(temp_path, "pums_recoded_2021.csv"), name_repair = make.names)
 
-pums_recoded_2024 <- get_pums(
-  variables = c("OCCP", "LANX"),
-  state = "all",
-  survey = "acs1",
-  year = 2024,
-  recode = TRUE
-)
+#pums_recoded_2024 <- get_pums(
+ # variables = c("OCCP", "LANX"),
+ # state = "all",
+ # survey = "acs1",
+ # year = 2024,
+ # recode = TRUE
+#)
 
-pums_recoded_2023 <- get_pums(
-  variables = c("OCCP", "LANX"),
-  state = "all",
-  survey = "acs1",
-  year = 2023,
-  recode = TRUE
-)
+#pums_recoded_2023 <- get_pums(
+#  variables = c("OCCP", "LANX"),
+#  state = "all",
+#  survey = "acs1",
+ # year = 2023,
+ # recode = TRUE
+#)
 
-pums_recoded_2022 <- get_pums(
-  variables = c("OCCP", "LANX"),
-  state = "all",
-  survey = "acs1",
-  year = 2022,
-  recode = TRUE
-)
+#pums_recoded_2022 <- get_pums(
+ # variables = c("OCCP", "LANX"),
+ # state = "all",
+ # survey = "acs1",
+#  year = 2022,
+#  recode = TRUE
+#)
 
-pums_recoded_2021 <- get_pums(
-  variables = c("OCCP", "LANX"),
-  state = "all",
-  survey = "acs1",
-  year = 2021,
-  recode = TRUE
-)
+#pums_recoded_2021 <- get_pums(
+#  variables = c("OCCP", "LANX"),
+#  state = "all",
+#  survey = "acs1",
+#  year = 2021,
+#  recode = TRUE
+#)
 
 total_pop_ma_acs1 <- 
   purrr::map_dfr(

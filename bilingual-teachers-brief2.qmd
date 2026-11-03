@@ -13,7 +13,6 @@ format:
     theme: zephyr
 ---
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
-```{r}
 library(tidyverse)
 library(ggrepel)
 library(knitr)
