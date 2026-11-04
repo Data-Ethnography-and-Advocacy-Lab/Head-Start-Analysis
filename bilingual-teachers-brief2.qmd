@@ -12,7 +12,13 @@ format:
     scrolling: true
     theme: zephyr
 ---
-```{r, echo=FALSE, message=FALSE, warning=FALSE}
+
+```{r}
+#| message: false
+#| warning: false
+#| echo: false
+#| include: false
+
 library(tidyverse)
 library(ggrepel)
 library(knitr)
@@ -23,8 +29,8 @@ library(htmltools)
 
 options(tidyverse.quiet = TRUE)
 
-source("pir_source.R")
-source("bilingual-teachers-source.R")
+source("pir_source.R", echo = FALSE, print.eval = FALSE)
+source("bilingual-teachers-source.R", echo = FALSE, print.eval = FALSE)
 hs_palette <- c("#e51937","#0063a6","#fff13b","#499f68","#84dcc6","#693668","#373d20","#717744")
 ```
 
