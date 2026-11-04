@@ -35,6 +35,7 @@ hs_palette <- c("#e51937","#0063a6","#fff13b","#499f68","#84dcc6","#693668","#37
 ```
 
 ## Bilingual Teachers in MA in 2024
+The NPRM prohibits preferential hiring for bilingual educators and promoting bilingualism at Head Start. It estimates that about 1 in 3 bilingual Head Start educators would lose their jobs as a result of this change, as it claims that not all bilingual educators could be retrained for English-only instruction. The available census and Head Start data records whether people speak a language other than English, so these figures assume that an educator in the state of Massachusetts most likely speaks English.
 
 ```{r}
 #| content: valuebox
