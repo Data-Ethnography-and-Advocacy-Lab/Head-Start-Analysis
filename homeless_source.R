@@ -17,7 +17,7 @@ child_pop <- read_excel(paste0(temp_path, "child_pop_state_age.xlsx"), .name_rep
   mutate(TimeFrame = as.numeric(TimeFrame),
          Data = as.numeric(Data),
          Location = toupper(Location)) |>
-  filter(LocationType == "State" & 
+  filter(LocationType != "Nation" & 
            Single.Age %in% c("<1", "1", "2", "3", "4", "5") &
            TimeFrame %in% c(2021:2025)) 
 
@@ -59,6 +59,7 @@ ed_totals_22 <- read_csv(paste0(temp_path, "ccd_sea_052_2122_l_1a_071722.csv"))
 ed_totals_23 <- read_csv(paste0(temp_path, "ccd_sea_052_2223_l_1a_083023.csv"))
 ed_totals_24 <- read_csv(paste0(temp_path, "ccd_sea_052_2324_l_1a_073124.csv"))
 ed_totals_25 <- read_csv(paste0(temp_path, "ccd_sea_052_2425_l_1a_073025.csv"))
+
 ed_totals_grade_1 <- rbind(ed_totals_22, 
                            ed_totals_23, 
                            ed_totals_24, 

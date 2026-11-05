@@ -78,5 +78,11 @@ pir_b <- map_df(year, pir_import_b)
 pir_c <- map_df(year, pir_import_c)
 
 pir_list <- list(pir_a, pir_b, pir_c)
+
 combined_pir <- pir_list |>
-  reduce(full_join, by = colnames(pir_a)[1:9])
+  reduce(full_join, by = colnames(pir_a)[1:9]) |>
+  filter(!State %in% c("AS", "GU", "MP", "PW", "VI"))
+
+territories_pir <- pir_list |>
+  reduce(full_join, by = colnames(pir_a)[1:9]) |>
+  filter(State %in% c("AS", "GU", "MP", "PW", "VI"))
