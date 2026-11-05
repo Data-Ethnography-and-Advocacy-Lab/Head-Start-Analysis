@@ -13,6 +13,8 @@ format:
 ---
 
 ```{r}
+#| results: "hide" 
+
 library(tidyverse)
 library(ggrepel)
 library(knitr)
@@ -25,12 +27,13 @@ library(gtExtras)
 
 options(tidyverse.quiet = TRUE)
 options(tidycensus.quiet = TRUE)
+options(download.file.method = "auto", quiet = TRUE) 
 
 source("pir_source.R")
 source("homeless_source.R")
 source("disability_source.R")
 source("DLLCensusSource.R")
-#source("bilingual-teachers-source.R")
+source("bilingual-teachers-source.R")
 hs_palette <- c("#e51937","#0063a6", "#F18F01","#499f68","#84dcc6","#693668","#373d20","#717744")
 ```
 
@@ -321,7 +324,11 @@ homeless_hs_map
 
 ## Overview of Homeless Counts from Different Sources
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+Counting the number of homeless children from ages 0-5 in the United States poses significant challenges. Annual point-in-time counts of sheltered and unsheltered homeless populations tracked by the Department of Housing and Urban Development count all homeless children under the age of 18, without further age disaggregation. Point-in-time counts also exclude individuals temporarily sheltered with family members, in motels, or in other hidden places. Public school counts of childhood homelessness tend to be higher because the Department of Education adopts the much broader McKinney-Vento Act definition of homelessness. However, public schools are often the first institution to identify a child's living status, and there are very few students under the age of 5 enrolled in public schools systems. Any child ages 0-5 that receives services as a result of a McKinney-Vento Subgrant Program gets counted by the Department of Education, but since many homeless children do not receive these services, this too is a poor proxy for estimating the extent of early childhood homelessness. 
+
+Given these limitations, SchoolHouse Connection has developed a method of calculating homelessness that determines the percentage of homeless children in Grade 1 in a given year and region, and then applying that percentage to the population of children from ages 0-5 in that same year and region. To the right we can see that the Grade 1 proxy method identifies at least 9 times as many homeless children as any other method of estimation. Even the Grade 1 proxy method is an underestimate as research has shown that even public schools struggle to identify homeless children. 
+
+See: Shephard, D.D., Hall, C.C., & Lamberton, C. (2021). Increasing identification of homeless students: An experimental evaluation of increased communication incorporating behavioral insights, Educational Researcher, 50(4), 239–248. https://doi.org/10.3102/0013189X20981067
 
 ```{r}
 #| fill: false
@@ -369,7 +376,9 @@ ed_totals_under_5 |>
 
 ## By Shelter Type
 
-Shelter type is not reported disaggregated by grade. We took the percentage of K-12 students in each shelter type, each year for each state and multiplied that percentage by the number of homeless children under 5 identified via the Grade 1 proxy method.
+The NPRM’s elimination of self-attestation would be detrimental to Head Start’s promise to serve the homeless population population. According to Department of Education data, in 2024, 66.9% of K-12 homeless students in Massachusetts were not living in emergency or transitional shelters but instead doubled up, living in hotels or motels, or unsheltered. These children meet the McKinney-Vento Act definition of homelessness but do not have access to immediate documentation of their status. This percentage is the closest we can come to estimating shelter situations for infants and children ages 0 to 5 since many homeless children are not counted until they enrolled in public schools. When we apply this percentage to the population of infants and children 0 to 5 in Massachusetts, the proposed changes would leave an estimated 13,024 homeless children across the state without the means to secure documentation for their enrollment in Head Start.
+
+For footnote: Shelter type is not reported disaggregated by grade. We took the percentage of K-12 students in each shelter type, each year for each state and multiplied that percentage by the number of homeless children under 5 identified via the Grade 1 proxy method.
 
 ```{r}
 #| fill: false
@@ -914,3 +923,370 @@ dll_hs_map <- leaflet(width = "100%") %>%
 dll_hs_map
 ```
  
+# Dual Language Educators
+
+## Bilingual Teachers in MA in 2024
+The NPRM prohibits preferential hiring for bilingual educators and promoting bilingualism at Head Start. It estimates that about 1 in 3 bilingual Head Start educators would lose their jobs as a result of this change, as it claims that not all bilingual educators could be retrained for English-only instruction. The available census and Head Start data records whether people speak a language other than English, so these figures assume that an educator in the state of Massachusetts most likely speaks English.
+
+```{r}
+#| content: valuebox
+#| title: "Total number of childcare workers and pre-k and kindergarten teachers that speak a language other than English in MA (estimate)"
+
+teacher_lang_summary <- ma_pums_recoded |>
+  filter(OCCP == 2300 | OCCP == 4600) |>
+  filter(LANX == 1) |>
+  summarize(prop = n() / 623)
+
+teacher_summary <- ma_pums_recoded |>
+  filter(OCCP == 2300 | OCCP == 4600) |>
+  summarize(prop = n() / 74617)
+
+total_teacher_est <- total_pop_ma$estimate[[1]] * teacher_summary$prop
+
+total_bilingual_teacher_est <- total_teacher_est * teacher_lang_summary$prop * 100
+
+list(
+  icon = "hash",
+  color = "info",
+  value = round(total_bilingual_teacher_est )
+)
+```
+
+```{r}
+#| content: valuebox
+#| title: "Proportion of childcare workers and pre-k and kindergarten teachers that speak a language other than English in MA"
+
+teacher_lang_percent <- teacher_lang_summary$prop * 100
+
+list(
+  icon = "percent",
+  color = "info",
+  value = round(teacher_lang_percent, 2)
+)
+```
+
+## Head Start Bilingual Teachers, MA, 2024
+```{r}
+#| content: valuebox
+#| title: "Total Number of Biliingual Teachers, Assistant Teachers, Home Visitors, and FCC Providers at Head Start in MA"
+
+bilingual_hs <- pir_b |>
+  filter(State == "MA") |>
+  filter(pir_year == 2024) |>
+  summarize(bilingual_teachers = sum(B.14))
+
+list(
+  icon = "hash",
+  color = "info",
+  value = bilingual_hs$bilingual_teachers
+)
+```
+
+```{r}
+#| content: valuebox
+#| title: "Precent of Teachers, Assistant Teachers, Home Visitors, and FCC Providers That Are Bilingual at Head Start in MA"
+
+hs_staff_summary <- pir_b |>
+  filter(State == "MA") |>
+  filter(pir_year == 2024) |>
+  summarize(bilingual_teachers_etc = sum(B.14, na.rm = TRUE),
+            total_preschool_classroom = sum(`B.3-1`, na.rm = TRUE),
+            total_preschool_asst = sum(`B.3-2`, na.rm = TRUE),
+            total_infant_toddler_teacher = sum(B.6, na.rm = TRUE),
+            total_home_visitor = sum(B.8, na.rm = TRUE),
+            total_FCC = sum(B.9, na.rm = TRUE),
+            denom = (total_preschool_classroom + total_preschool_asst + total_infant_toddler_teacher + total_home_visitor + total_FCC),
+            percent_bilingual_teachers_etc = bilingual_teachers_etc / denom)
+
+
+list(
+  icon = "percent",
+  color = "info",
+  value = round(hs_staff_summary$percent_bilingual_teachers_etc * 100, 2)
+)
+```
+
+```{r}
+#| content: valuebox
+#| title: "Proportion of childcare workers and pre-k and kindergarten teachers that speak a language other than English employed at Head Start in MA"
+
+prop_at_hs <- bilingual_hs$bilingual_teachers / total_bilingual_teacher_est * 100
+
+list(
+  icon = "percent",
+  color = "info",
+  value = round(prop_at_hs, 2)
+)
+```
+
+## Temporal Visualizations
+```{r}
+#| fill: false
+
+#note: make this into a function to do other states
+earlyed_2024 <- pums_recoded_2024 |>
+  filter(OCCP == 2300 | OCCP == 4600) |>
+  mutate(year = 2024)
+earlyed_2023 <- pums_recoded_2023 |>
+  filter(OCCP == 2300 | OCCP == 4600) |>
+  mutate(year = 2023)
+earlyed_2022 <- pums_recoded_2022 |>
+  filter(OCCP == 2300 | OCCP == 4600) |>
+  mutate(year = 2022) |>
+  rename(STATE = ST,
+         STATE_label = ST_label)
+earlyed_2021 <- pums_recoded_2021 |>
+  filter(OCCP == 2300 | OCCP == 4600) |>
+  mutate(year = 2021) |>
+  rename(STATE = ST,
+         STATE_label = ST_label)
+
+# add column for year, join together, split into ma vs everywhere else, visualize
+
+combined_earlyed <- dplyr::bind_rows(earlyed_2024, earlyed_2023, earlyed_2022, earlyed_2021)
+
+combined_earlyed |>
+  mutate(is_ma = case_when(STATE == 25 ~ "MA",
+                           STATE != 25 ~ "Other States")) |>
+  group_by(year, is_ma) |>
+  filter(!is.na(is_ma)) |>
+  summarize(total_earlyeds = n(),
+            total_bilingual = sum(LANX == 1)) |>
+  ungroup() |>
+  group_by(year) |>
+  mutate(is_ma = case_when(is_ma == "MA" ~ "MA",
+                           is_ma != "MA" ~ "USA"),
+         total_earlyeds = case_when(is_ma == "MA" ~ total_earlyeds,
+                           is_ma == "USA" ~ sum(total_earlyeds, na.rm = TRUE)),
+         total_bilingual = case_when(is_ma == "MA" ~ total_bilingual,
+                           is_ma == "USA" ~ sum(total_bilingual)),
+          percent_bilingual = total_bilingual / total_earlyeds * 100) |>
+  ggplot(aes(x = year, y = percent_bilingual, col = is_ma, group = is_ma)) +
+  geom_line() +
+  scale_x_continuous(breaks = min(year):max(year)) +
+    scale_color_manual(values = hs_palette) +
+  labs(x = "Year",
+       y = "Percent of Multilingual Early Educators", 
+       title = "MA Has A Higher Proportion of Multilingual Early Educators, But That's Decreasing",
+       subtitle = "American Community Survey Public Use Microdata Sample, 2021-2024") +
+  theme_minimal()
+```
+
+```{r}
+#| fill: false
+pir_b |>
+  mutate(is_ma = case_when(State == "MA" ~ "MA",
+                           State != "MA" ~ "Other States")) |>
+  group_by(pir_year, is_ma) |>
+  filter(!is.na(is_ma)) |>
+  summarize(bilingual_teachers_etc = sum(B.14, na.rm = TRUE),
+             total_preschool_classroom = sum(`B.3-1`, na.rm = TRUE),
+            total_preschool_asst = sum(`B.3-2`, na.rm = TRUE),
+            total_infant_toddler_teacher = sum(B.6, na.rm = TRUE),
+            total_home_visitor = sum(B.8, na.rm = TRUE),
+            total_FCC = sum(B.9, na.rm = TRUE),
+            denom = (total_preschool_classroom + total_preschool_asst + total_infant_toddler_teacher + total_home_visitor + total_FCC)) |>
+  ungroup() |>
+  group_by(pir_year) |>
+  mutate(is_ma = case_when(is_ma == "MA" ~ "MA",
+                           is_ma != "MA" ~ "USA"),
+         bilingual_teachers_etc = case_when(is_ma == "MA" ~ bilingual_teachers_etc,
+                           is_ma == "USA" ~ sum(bilingual_teachers_etc, na.rm = TRUE)),
+         denom = case_when(is_ma == "MA" ~ denom,
+                           is_ma == "USA" ~ sum(denom)),
+          percent_bilingual_teachers_etc = bilingual_teachers_etc / denom * 100) |>
+  ggplot(aes(x = pir_year, y = percent_bilingual_teachers_etc, col = is_ma, group = is_ma)) +
+  geom_line() +
+  scale_x_continuous(breaks = min(pir_a$pir_year):max(pir_a$pir_year)) +
+    scale_color_manual(values = hs_palette) +
+  labs(x = "Year",
+       y = "Percent of Multilingual Staff*", 
+       title = "MA HS has More Multilingual Staff*",
+       subtitle = "Head Start Program Information Report, 2021-2025",
+       caption = "*'Staff' includes teachers, assistant teachers, home visitors, and family childcare providers") +
+  theme_minimal()
+```
+
+```{r}
+#| fill: false
+
+#get pop of ma vs US for all years, multiply by percent early ed, multiply by percent bilingual, divide hs number by that number
+
+
+bilingual_ma_vs_usa <- combined_earlyed |>
+  mutate(is_ma = case_when(STATE == 25 ~ "MA",
+                           STATE != 25 ~ "Other States")) |>
+  group_by(year, is_ma) |>
+  filter(!is.na(is_ma)) |>
+  summarize(total_earlyeds = n(),
+            total_bilingual = sum(LANX == 1)) |>
+  ungroup() |>
+  group_by(year) |>
+  mutate(is_ma = case_when(is_ma == "MA" ~ "MA",
+                           is_ma != "MA" ~ "USA"),
+         total_earlyeds = case_when(is_ma == "MA" ~ total_earlyeds,
+                           is_ma == "USA" ~ sum(total_earlyeds, na.rm = TRUE)),
+         total_bilingual = case_when(is_ma == "MA" ~ total_bilingual,
+                           is_ma == "USA" ~ sum(total_bilingual)),
+          percent_bilingual = total_bilingual / total_earlyeds * 100)
+
+ma_vs_usa_pop <- dplyr::bind_rows(total_pop_by_year, total_pop_ma_acs1)
+
+ma_vs_usa_pop <- ma_vs_usa_pop |>
+  mutate(year = case_when(year == 1 ~ 2021,
+                          year == 2 ~ 2022,
+                          year == 3 ~ 2023,
+                          year == 4 ~ 2024),
+         is_ma = case_when(GEOID == 1 ~ "USA",
+                           GEOID == 25 ~ "MA"))
+
+bilingual_vs_total <- left_join(ma_vs_usa_pop, bilingual_ma_vs_usa)
+
+earlyeds_prop_usa_2021 <- nrow(earlyed_2021)/nrow(pums_recoded_2021) 
+earlyeds_prop_usa_2022 <- nrow(earlyed_2022)/nrow(pums_recoded_2022)
+earlyeds_prop_usa_2023 <- nrow(earlyed_2023)/nrow(pums_recoded_2023)
+earlyeds_prop_usa_2024 <- nrow(earlyed_2021)/nrow(pums_recoded_2024)
+earlyeds_prop_ma_2021 <- nrow(earlyed_2021["STATE" == 25])/nrow(pums_recoded_2021["ST" = 25])
+earlyeds_prop_ma_2022 <- nrow(earlyed_2022["STATE" == 25])/nrow(pums_recoded_2022["ST" = 25])
+earlyeds_prop_ma_2023 <- nrow(earlyed_2023["STATE" == 25])/nrow(pums_recoded_2023["STATE" = 25])
+earlyeds_prop_ma_2024 <- nrow(earlyed_2024["STATE" == 25])/nrow(pums_recoded_2024["STATE" = 25])
+prop_earlyed <- c(earlyeds_prop_usa_2021, earlyeds_prop_usa_2022, earlyeds_prop_usa_2023, earlyeds_prop_usa_2024, earlyeds_prop_ma_2021, earlyeds_prop_ma_2023, earlyeds_prop_ma_2022, earlyeds_prop_ma_2021)
+
+bilingual_vs_total$prop_earlyed <- prop_earlyed
+
+bilingual_vs_total <- bilingual_vs_total |>
+  mutate(est_total_bilingual_earlyed = estimate * prop_earlyed * percent_bilingual / 100)
+
+hs <- pir_b |>
+  filter(pir_year != 2025) |>
+  mutate(is_ma = case_when(State == "MA" ~ "MA",
+                           State != "MA" ~ "Other States")) |>
+  group_by(pir_year, is_ma) |>
+  filter(!is.na(is_ma)) |>
+  summarize(bilingual_teachers_etc = sum(B.14, na.rm = TRUE)) |>
+              ungroup() |>
+  group_by(pir_year) |>
+  mutate(is_ma = case_when(is_ma == "MA" ~ "MA",
+                           is_ma != "MA" ~ "USA"),
+         bilingual_teachers_etc = case_when(is_ma == "MA" ~ bilingual_teachers_etc,
+                           is_ma == "USA" ~ sum(bilingual_teachers_etc, na.rm = TRUE))) |>
+  rename(year = pir_year)
+
+bilingual_vs_total <- left_join(bilingual_vs_total, hs)
+bilingual_vs_total <- bilingual_vs_total |>
+  mutate(percent_served = bilingual_teachers_etc / est_total_bilingual_earlyed * 100)
+
+bilingual_vs_total |>
+  ggplot(aes(x = year, y = percent_served, col = is_ma, group = is_ma)) +
+  geom_line() +
+  scale_x_continuous(breaks = min(year):max(year)) +
+    scale_color_manual(values = hs_palette) +
+  labs(x = "Year",
+       y = "Percent of Bilingual Early Educators Working At HS*", 
+       title = "Percent of Bilingual Early Educators Working at Head Start, 2021-2024*",
+       subtitle = "American Community Survey, American Community Survey Public Use Microdata Sample, Head Start Program Information Report, 2021-2025") +
+  theme_minimal()
+```
+
+## MA Ranking
+```{r}
+#| content: valuebox
+#| title: "How MA Ranks vs Other States for Bilingual Staff at Head Start"
+
+multilingual_staff_rank <- pir_b |>
+  filter(pir_year == 2024) |>
+  group_by(State) |>
+  summarize(bilingual_teachers_etc = sum(B.14, na.rm = TRUE),
+            total_preschool_classroom = sum(`B.3-1`, na.rm = TRUE),
+            total_preschool_asst = sum(`B.3-2`, na.rm = TRUE),
+            total_infant_toddler_teacher = sum(B.6, na.rm = TRUE),
+            total_home_visitor = sum(B.8, na.rm = TRUE),
+            total_FCC = sum(B.9, na.rm = TRUE),
+            denom = (total_preschool_classroom + total_preschool_asst + total_infant_toddler_teacher + total_home_visitor + total_FCC),
+            percent_bilingual_teachers_etc = bilingual_teachers_etc / denom * 100) |>
+  mutate(state_rank = rank(-percent_bilingual_teachers_etc, ties.method = "min"))
+
+ma_rank <- multilingual_staff_rank |>
+  filter(State == "MA") |>
+  select(state_rank) |>
+  pull()
+  
+
+list(
+  icon = "award",
+  color = "info",
+  value = ma_rank
+)
+```
+
+```{r}
+#| fill: false
+#| title: "Top 5 States + MA in terms of percent of staff Head Start that speak another language"
+multilingual_staff_rank |>
+  filter((State == "MA" | state_rank <= 5)) |>
+  arrange(desc(percent_bilingual_teachers_etc)) |>
+  select(State, 
+         `% Staff Speak Another Language` =  percent_bilingual_teachers_etc,
+         `Total Staff Speak Another Language` = bilingual_teachers_etc) |>
+  kable()
+```
+
+```{r}
+us_states <- states(cb = TRUE, 
+                    resolution = "20m", 
+                    progress_bar = FALSE) |>
+  left_join(multilingual_staff_rank, by = c("STUSPS" = "State")) |>
+  st_transform(4326)
+
+labels <- paste("<strong>", 
+                us_states$NAME,
+                "</strong><br>Rank:", 
+                us_states$state_rank,
+                "<br>% Staff Speak Another Language:",
+                us_states$percent_bilingual_teachers_etc) |>
+  lapply(htmltools::HTML)
+
+pal_bin_state_rank <- colorBin(palette="BuGn", 
+                    domain = us_states$percent_bilingual_teachers_etc,
+                    bins = 5)
+
+staff_hs_map <- leaflet(width = "100%") %>%
+  setView(lat = 30, lng = -95, zoom = 3) %>%
+  addProviderTiles(providers$Esri.NatGeoWorldMap) |> 
+  addPolygons(data = us_states, 
+              weight = 1,
+              color = "black",
+              fillColor = ~pal_bin_state_rank(percent_bilingual_teachers_etc),
+              fillOpacity = 0.8, 
+              label = labels) |>
+  addLegend(data = us_states,
+            title = "% HS Staff Speak Another Language", 
+            pal = pal_bin_state_rank, 
+            values = ~percent_bilingual_teachers_etc)
+
+staff_hs_map
+```
+
+## Appendix {.appendix}
+```{r}
+pir_b |>
+  filter(pir_year == 2024) |>
+  group_by(State) |>
+  summarize(total_staff = sum(`B.1-1`),
+    bilingual_teachers_etc = sum(B.14, na.rm = TRUE),
+            total_preschool_classroom = sum(`B.3-1`, na.rm = TRUE),
+            total_preschool_asst = sum(`B.3-2`, na.rm = TRUE),
+            total_infant_toddler_teacher = sum(B.6, na.rm = TRUE),
+            total_home_visitor = sum(B.8, na.rm = TRUE),
+            total_FCC = sum(B.9, na.rm = TRUE),
+            denom = (total_preschool_classroom + total_preschool_asst + total_infant_toddler_teacher + total_home_visitor + total_FCC),
+            percent_bilingual_teachers_etc = bilingual_teachers_etc / denom * 100,
+    total_programs = n()) |>
+  mutate(state_rank = rank(-percent_bilingual_teachers_etc, ties.method = "min")) |>
+  select(State, 
+         `% Staff Speak Another Language` =  percent_bilingual_teachers_etc,
+         `Total Staff Speak Another Language` = bilingual_teachers_etc,
+         `Total Staff` = total_staff,
+         `Total Programs` = total_programs)|>
+  kable()
+```
