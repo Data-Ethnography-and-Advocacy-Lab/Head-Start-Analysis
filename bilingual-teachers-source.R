@@ -1,6 +1,7 @@
 library(tidycensus)
 library(purrr)
 library(dplyr)
+library(tidyverse)
 
 variables <- load_variables(2024, "acs5")
 
@@ -60,37 +61,53 @@ ma_pums_recoded <- get_pums(
   recode = TRUE
 )
 
-pums_recoded_2024 <- get_pums(
-  variables = c("OCCP", "LANX"),
-  state = "all",
-  survey = "acs1",
-  year = 2024,
-  recode = TRUE
-)
+OS <- .Platform$OS.type
 
-pums_recoded_2023 <- get_pums(
-  variables = c("OCCP", "LANX"),
-  state = "all",
-  survey = "acs1",
-  year = 2023,
-  recode = TRUE
-)
+if (OS == "unix"){
+  temp_path <- "data/" # MAC file path
+} else if (OS == "windows"){
+  temp_path <- "..\\Head-Start-Analysis\\data\\" # windows file path
+} else {
+  print("ERROR: OS could not be identified")
+}
 
-pums_recoded_2022 <- get_pums(
-  variables = c("OCCP", "LANX"),
-  state = "all",
-  survey = "acs1",
-  year = 2022,
-  recode = TRUE
-)
 
-pums_recoded_2021 <- get_pums(
-  variables = c("OCCP", "LANX"),
-  state = "all",
-  survey = "acs1",
-  year = 2021,
-  recode = TRUE
-)
+pums_recoded_2024 <- read_csv(paste0(temp_path, "pums_recoded_2024.csv"), name_repair = make.names)
+pums_recoded_2023 <- read_csv(paste0(temp_path, "pums_recoded_2023.csv"), name_repair = make.names)
+pums_recoded_2022 <- read_csv(paste0(temp_path, "pums_recoded_2022.csv"), name_repair = make.names)
+pums_recoded_2021 <- read_csv(paste0(temp_path, "pums_recoded_2021.csv"), name_repair = make.names)
+
+#pums_recoded_2024 <- get_pums(
+ # variables = c("OCCP", "LANX"),
+ # state = "all",
+ # survey = "acs1",
+ # year = 2024,
+ # recode = TRUE
+#)
+
+#pums_recoded_2023 <- get_pums(
+#  variables = c("OCCP", "LANX"),
+#  state = "all",
+#  survey = "acs1",
+ # year = 2023,
+ # recode = TRUE
+#)
+
+#pums_recoded_2022 <- get_pums(
+ # variables = c("OCCP", "LANX"),
+ # state = "all",
+ # survey = "acs1",
+#  year = 2022,
+#  recode = TRUE
+#)
+
+#pums_recoded_2021 <- get_pums(
+#  variables = c("OCCP", "LANX"),
+#  state = "all",
+#  survey = "acs1",
+#  year = 2021,
+#  recode = TRUE
+#)
 
 total_pop_ma_acs1 <- 
   purrr::map_dfr(
