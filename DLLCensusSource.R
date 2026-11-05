@@ -249,3 +249,5 @@ overall_data <- overall_data |>
       TimeFrame == 2023 ~ total_children * 0.219,
       TimeFrame == 2022 ~ total_children * 0.214,
       TimeFrame == 2021 ~ total_children * 0.213))
+
+write.csv(overall_data, "overall_data.csv", row.names = FALSE)

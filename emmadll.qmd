@@ -84,20 +84,6 @@ list(
 #| content: valuebox
 #| title: "Percent of children enrolled in Head Start that are DLL in MA"
 
-hsswdllprop <- headstart_dll/statewide_dll
-hsswdllpercentage <- hsswdllprop * 100
-
-list(
-  icon = "percent",
-  color = "info",
-  value = round(hsswdllpercentage, 2)
-)
-```
-
-```{r}
-#| content: valuebox
-#| title: "Percent of dual language learners in MA that Head Start serves"
-
 headstart_total <- dll_hs$total_child_enroll
 
 hsdllprop <- headstart_dll/headstart_total
@@ -107,6 +93,20 @@ list(
   icon = "percent",
   color = "info",
   value = round(hsdllpercentage, 2)
+)
+```
+
+```{r}
+#| content: valuebox
+#| title: "Percent of dual language learners in MA that Head Start serves"
+
+hsswdllprop <- headstart_dll/statewide_dll
+hsswdllpercentage <- hsswdllprop * 100
+
+list(
+  icon = "percent",
+  color = "info",
+  value = round(hsswdllpercentage, 2)
 )
 ```
 
@@ -132,11 +132,12 @@ overall_data |>
          total_population = case_when(is_ma == "MASSACHUSETTS" ~ total_population,
                            is_ma == "USA" ~ sum(total_population)),
          ,
-      percent_dll1 = dll_children / total_population * 100) |>
+      percent_dll1 = dll_children / total_population * 100)
+
   ggplot(aes(x = TimeFrame, y = percent_dll1, col = is_ma, group = is_ma)) +
   geom_line() +
   scale_x_continuous() +
-  scale_y_continuous(limits = c(20, 25)) +
+  scale_y_continuous(limits = c(0, 100)) +
   scale_color_manual(values = hs_palette) +
   labs(x = "Year", 
        y = "% DLL Children",
