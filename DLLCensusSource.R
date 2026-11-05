@@ -163,6 +163,13 @@ headstart_dll_states <- pir_a |>
             percent_dll = total_dll_enroll / total_child_enroll * 100) |>
   arrange(desc(percent_dll))
 
+headstart_dll_all <- pir_a |>
+  group_by(State, pir_year) |>
+  summarize(total_child_enroll = sum(A.10.g, na.rm = TRUE), 
+            total_dll_enroll = sum(A.27, na.rm = TRUE),
+            percent_dll = total_dll_enroll / total_child_enroll * 100) |>
+  arrange(desc(percent_dll))
+
 headstart_dll_ma <- pir_a |>
   filter(State == "MA") |>
   group_by(pir_year) |>
@@ -175,6 +182,12 @@ headstart_dll_ma <- pir_a |>
 child_pop_21_24 <- child_pop[child_pop$TimeFrame %in% 2021:2024,]
 ma_child_pop_21_24 <- child_pop_21_24 |>
   filter(Location == "MASSACHUSETTS")
+
+child_pop_sums <- child_pop_21_24 |> 
+  group_by(Location, TimeFrame) |> 
+  summarize(
+    total_children = sum(Data, na.rm = TRUE))
+
 ma_agechart_2124 <- aggregate(Data ~ Single.Age + TimeFrame, data = ma_child_pop_21_24, FUN = sum, na.rm = TRUE)
 
 ma_agechart_2124 <- ma_agechart_2124 |>
@@ -218,3 +231,21 @@ agechart_2124_groups <- aggregate(
 usa_dllenroll <- left_join(agechart_2124_groups, headstart_dll_years, 
                            by = c("TimeFrame" = "pir_year"))|>
   mutate(dll_prop = total_dll_enroll/proxy_24)
+#_______________________________________
+hs_dll_fullnames <- headstart_dll_all |>
+  mutate(
+    state_full = state.name[match(State, state.abb)],
+    State = coalesce(state_full, State), 
+    State = str_to_upper(State)) |>
+  select(-state_full)
+
+overall_data <- child_pop_sums |>
+  left_join(hs_dll_fullnames, by = c("Location" = "State", 
+                                     "TimeFrame" = "pir_year"))
+overall_data <- overall_data |>
+  mutate(
+    proxy_dll_under5 = case_when(
+      TimeFrame == 2024 ~ total_children * 0.220,
+      TimeFrame == 2023 ~ total_children * 0.219,
+      TimeFrame == 2022 ~ total_children * 0.214,
+      TimeFrame == 2021 ~ total_children * 0.213))
