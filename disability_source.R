@@ -52,7 +52,7 @@ child_pop <- read_excel(paste0(temp_path, "child_pop_state_age.xlsx"),
   mutate(TimeFrame = as.numeric(TimeFrame),
          Data = as.numeric(Data),
          Location = toupper(Location)) |>
-  filter(LocationType == "State" &
+  filter(LocationType != "Nation" &
            Single.Age %in% c("<1", "1", "2", "3", "4", "5") &
            TimeFrame %in% c(2021:2025))
 

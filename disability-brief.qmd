@@ -27,6 +27,11 @@ options(tidyverse.quiet = TRUE)
 source("pir_source.R")
 source("disability_source.R")
 hs_palette <- c("#e51937","#0063a6","#fff13b","#499f68","#84dcc6","#693668","#373d20","#717744")
+
+include_states <- c(state.abb, "DC", "PR")
+combined_pir <- combined_pir |> filter(State %in% include_states)
+disability_under_5 <- disability_under_5 |> filter(ST %in% include_states)
+
 ```
 ## IDEA Overview
 IDEA, or the Individuals with Disabilities Education Act, is the law that ensures all children have access to education regardless of disability. This means that children served by IDEA are those who require early intervention (e.g., speech or occupational therapy), special education, or another disability-related service. 
@@ -45,7 +50,7 @@ ma_disabled_total_2024 <- disability_under_5 |>
 list(
   icon = "hash",
   color = "info",
-  value = ma_disabled_total_2024
+  value = format(ma_disabled_total_2024, big.mark = ",")
 )
 ```
 
@@ -61,8 +66,9 @@ ma_disabled_percent_2024 <- disability_under_5 |>
 list(
   icon = "percent",
   color = "info",
-  value = round(ma_disabled_percent_2024, 2)
-)
+  value = format(round(ma_disabled_percent_2024, 2), big.mark = ",")
+  )
+
 ```
 
 ## Head Start Disability Support, MA, 2024
@@ -79,8 +85,8 @@ ma_total_hs_disabled_2024 <- disability_under_5 |>
 list(
   icon = "hash",
   color = "info",
-  value = ma_total_hs_disabled_2024
-)
+  value = format(ma_total_hs_disabled_2024, big.mark = ",")
+  )
 ```
 
 ```{r}
@@ -95,8 +101,8 @@ ma_percent_hs_disabled_2024 <- disability_under_5 |>
 list(
   icon = "percent",
   color = "info",
-  value = round(ma_percent_hs_disabled_2024, 2)
-)
+  value = format(round(ma_percent_hs_disabled_2024, 2), big.mark = ",")
+  )
 ```
 
 ```{r}
@@ -218,7 +224,7 @@ disability_under_5 |>
   labs(x = "Year",
        y = "% Children Receiving IDEA Services 0-5 Served by Head Start",
        col = "",
-       title = "Head Start Share of IDEA Receiving Children 0-5, 2021 - 2024") +
+       title = "Head Start Share of Children Receiving IDEA 0-5, 2021 - 2024") +
   theme_minimal() +
   geom_text(aes(label = round(percent_served, 2)),
             vjust = -0.25)
@@ -263,7 +269,8 @@ list(
 disablity_state_rank |>
   filter(pir_year == 2024 & (State == "MA" | state_rank <= 5)) |>
   arrange(desc(percent_disabled)) |>
-  select(State, 
+  select(Rank = state_rank, 
+         State, 
          `% receiving disablity services` = percent_disabled ) |>
   kable()
 ```
