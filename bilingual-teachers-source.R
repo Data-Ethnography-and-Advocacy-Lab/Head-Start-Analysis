@@ -77,6 +77,14 @@ pums_recoded_2023 <- read_csv(paste0(temp_path, "pums_recoded_2023.csv"), name_r
 pums_recoded_2022 <- read_csv(paste0(temp_path, "pums_recoded_2022.csv"), name_repair = make.names)
 pums_recoded_2021 <- read_csv(paste0(temp_path, "pums_recoded_2021.csv"), name_repair = make.names)
 
+PR_pums_2024 <- get_pums(
+  variables = c("OCCP", "LANX"),
+  state = "PR",
+  survey = "acs1",
+  year = 2024,
+  recode = TRUE
+)
+
 #pums_recoded_2024 <- get_pums(
  # variables = c("OCCP", "LANX"),
  # state = "all",
