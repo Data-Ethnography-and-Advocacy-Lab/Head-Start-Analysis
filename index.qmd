@@ -1021,6 +1021,8 @@ list(
 )
 ```
 
+The NPRM is especially of concern in Massachusetts, where nearly half of Head Start educators, home visitors, and family childcare providers speak a language other than English. In comparison with the rest of the state, in which only 30% of similar professionals speak another language, Head Start is unique in the amount of multilingual staff it hires. At Head Start, a multilingual staff serve a multilingual student body and multilingual families, but the NPRM puts all three of those groups in jeopardy.
+
 ## Temporal Visualizations
 ```{r}
 #| fill: false
@@ -1105,6 +1107,8 @@ pir_b |>
        caption = "*'Staff' includes teachers, assistant teachers, home visitors, and family childcare providers") +
   theme_minimal()
 ```
+
+Together, these two graphs show why the NPRM is especially of concern in Massachusetts. As a whole and at Head Start, Massachusetts has a higher proportion of multilingual early educators than the rest of the nation, At Head Start, the proportion of multilingual staff is also increasing faster than the rest of the nation. This means that nearly one third of Head Start staff nationally, and nearly half in Massachusetts, will have to be retrained or are at risk of losing their jobs if the NPRM passes in its current form. This has the potential to be incredibly disruptive in Massachusetts, as nearly half of educators must entirely transform how they teach.
 
 ```{r}
 #| fill: false
