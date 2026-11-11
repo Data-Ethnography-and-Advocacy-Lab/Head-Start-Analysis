@@ -2,6 +2,7 @@ library(tidycensus)
 library(purrr)
 library(dplyr)
 library(tidyverse)
+library(ipumsr)
 
 variables <- load_variables(2024, "acs5")
 
@@ -80,9 +81,10 @@ pums_recoded_2021 <- read_csv(paste0(temp_path, "pums_recoded_2021.csv"), name_r
 PR_pums_2024 <- get_pums(
   variables = c("OCCP", "LANX"),
   state = "PR",
-  survey = "acs1",
+  survey = "prcs1",
   year = 2024,
-  recode = TRUE
+  recode = TRUE,
+  show_call = TRUE
 )
 
 #pums_recoded_2024 <- get_pums(
@@ -137,3 +139,7 @@ total_pop_by_year <-
       year = .x, 
       survey = "acs1"),
     .id = "year")
+
+setwd("C:\IPUMS\")
+ddi <- read_ipums_ddi("usa_00001.xml")
+data <- read_ipums_micro(ddi)
