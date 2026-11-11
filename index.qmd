@@ -1049,8 +1049,8 @@ combined_earlyed |>
                            STATE != 25 ~ "Other States")) |>
   group_by(year, is_ma) |>
   filter(!is.na(is_ma)) |>
-  summarize(total_earlyeds = n(),
-            total_bilingual = sum(LANX == 1)) |>
+  summarize(total_earlyeds = sum(PWGTP),
+            total_bilingual = sum(PWGTP[LANX == 1])) |>
   ungroup() |>
   group_by(year) |>
   mutate(is_ma = case_when(is_ma == "MA" ~ "MA",
@@ -1117,8 +1117,8 @@ bilingual_ma_vs_usa <- combined_earlyed |>
                            STATE != 25 ~ "Other States")) |>
   group_by(year, is_ma) |>
   filter(!is.na(is_ma)) |>
-  summarize(total_earlyeds = n(),
-            total_bilingual = sum(LANX == 1)) |>
+  summarize(total_earlyeds = sum(PWGTP),
+            total_bilingual = sum(PWGTP[LANX == 1])) |>
   ungroup() |>
   group_by(year) |>
   mutate(is_ma = case_when(is_ma == "MA" ~ "MA",
@@ -1225,6 +1225,7 @@ multilingual_staff_rank |>
   filter((State == "MA" | state_rank <= 5)) |>
   arrange(desc(percent_bilingual_teachers_etc)) |>
   select(State, 
+         `Rank` = state_rank,
          `% Staff Speak Another Language` =  percent_bilingual_teachers_etc,
          `Total Staff Speak Another Language` = bilingual_teachers_etc) |>
   kable()
