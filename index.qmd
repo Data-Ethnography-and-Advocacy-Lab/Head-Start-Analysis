@@ -950,7 +950,7 @@ total_bilingual_teacher_est <- total_teacher_est * teacher_lang_summary$prop * 1
 list(
   icon = "hash",
   color = "info",
-  value = round(total_bilingual_teacher_est )
+  value = format(round(total_bilingual_teacher_est), big.mark = ",")
 )
 ```
 
@@ -963,7 +963,7 @@ teacher_lang_percent <- teacher_lang_summary$prop * 100
 list(
   icon = "percent",
   color = "info",
-  value = round(teacher_lang_percent, 2)
+  value = format(round(teacher_lang_percent, 2), big.mark = ",")
 )
 ```
 
@@ -980,7 +980,7 @@ bilingual_hs <- pir_b |>
 list(
   icon = "hash",
   color = "info",
-  value = bilingual_hs$bilingual_teachers
+  value = format(bilingual_hs$bilingual_teachers, big.mark = ",")
 )
 ```
 
@@ -1004,7 +1004,7 @@ hs_staff_summary <- pir_b |>
 list(
   icon = "percent",
   color = "info",
-  value = round(hs_staff_summary$percent_bilingual_teachers_etc * 100, 2)
+  value = format(round(hs_staff_summary$percent_bilingual_teachers_etc * 100, 2), big.mark = ",")
 )
 ```
 
@@ -1017,7 +1017,7 @@ prop_at_hs <- bilingual_hs$bilingual_teachers / total_bilingual_teacher_est * 10
 list(
   icon = "percent",
   color = "info",
-  value = round(prop_at_hs, 2)
+  value = format(round(prop_at_hs, 2), big.mark = ",")
 )
 ```
 
