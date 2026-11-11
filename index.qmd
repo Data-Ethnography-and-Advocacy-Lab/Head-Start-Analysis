@@ -934,12 +934,14 @@ The NPRM prohibits preferential hiring for bilingual educators and promoting bil
 
 teacher_lang_summary <- ma_pums_recoded |>
   filter(OCCP == 2300 | OCCP == 4600) |>
-  filter(LANX == 1) |>
-  summarize(prop = n() / 623)
+  summarize(total = sum(PWGTP),
+            speak_another_lang = sum(PWGTP[LANX == 1]),
+            prop = speak_another_lang/total)
 
 teacher_summary <- ma_pums_recoded |>
-  filter(OCCP == 2300 | OCCP == 4600) |>
-  summarize(prop = n() / 74617)
+  summarize(total = sum(PWGTP),
+            teachers = sum(PWGTP[OCCP == 2300 | OCCP == 4600]),
+            prop = teachers / total)
 
 total_teacher_est <- total_pop_ma$estimate[[1]] * teacher_summary$prop
 
@@ -1023,7 +1025,6 @@ list(
 ```{r}
 #| fill: false
 
-#note: make this into a function to do other states
 earlyed_2024 <- pums_recoded_2024 |>
   filter(OCCP == 2300 | OCCP == 4600) |>
   mutate(year = 2024)
@@ -1040,8 +1041,6 @@ earlyed_2021 <- pums_recoded_2021 |>
   mutate(year = 2021) |>
   rename(STATE = ST,
          STATE_label = ST_label)
-
-# add column for year, join together, split into ma vs everywhere else, visualize
 
 combined_earlyed <- dplyr::bind_rows(earlyed_2024, earlyed_2023, earlyed_2022, earlyed_2021)
 
