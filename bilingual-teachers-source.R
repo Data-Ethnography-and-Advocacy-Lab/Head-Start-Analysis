@@ -131,6 +131,5 @@ total_pop_by_year <-
       survey = "acs1"),
     .id = "year")
 
-#setwd("C:\IPUMS\")
-#ddi <- read_ipums_ddi("usa_00001.xml")
-#data <- read_ipums_micro(ddi)
+ddi <- read_ipums_ddi("data/usa_00001.xml")
+data <- read_ipums_micro(ddi)
