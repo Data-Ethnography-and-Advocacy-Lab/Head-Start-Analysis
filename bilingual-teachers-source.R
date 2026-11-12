@@ -132,4 +132,13 @@ total_pop_by_year <-
     .id = "year")
 
 ddi <- read_ipums_ddi("data/usa_00001.xml")
-data <- read_ipums_micro(ddi)
+pr_pums <- read_ipums_micro(ddi)
+
+pr_pums <- pr_pums |>
+  rename(PWGTP = PERWT) |>
+  mutate(SPEAKENG_label = case_when(SPEAKENG == 0 ~ "N/A or blank",
+                                    SPEAKENG == 1 ~ "Does not speak English",
+                                    SPEAKENG == 3 ~ "Yes, speaks only English",
+                                    SPEAKENG == 4 ~ "Yes, speaks [English] very well",
+                                    SPEAKENG == 5 ~ "Yes, speaks [English] well",
+                                    SPEAKENG == 6 ~ "Yes, [speaks English] but not well"))
