@@ -945,7 +945,7 @@ teacher_summary <- ma_pums_recoded |>
 
 total_teacher_est <- total_pop_ma$estimate[[1]] * teacher_summary$prop
 
-total_bilingual_teacher_est <- total_teacher_est * teacher_lang_summary$prop * 100
+total_bilingual_teacher_est <- total_teacher_est * teacher_lang_summary$prop
 
 list(
   icon = "hash",
