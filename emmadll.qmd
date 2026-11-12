@@ -84,20 +84,6 @@ list(
 #| content: valuebox
 #| title: "Percent of children enrolled in Head Start that are DLL in MA"
 
-hsswdllprop <- headstart_dll/statewide_dll
-hsswdllpercentage <- hsswdllprop * 100
-
-list(
-  icon = "percent",
-  color = "info",
-  value = round(hsswdllpercentage, 2)
-)
-```
-
-```{r}
-#| content: valuebox
-#| title: "Percent of dual language learners in MA that Head Start serves"
-
 headstart_total <- dll_hs$total_child_enroll
 
 hsdllprop <- headstart_dll/headstart_total
@@ -110,70 +96,125 @@ list(
 )
 ```
 
+```{r}
+#| content: valuebox
+#| title: "Percent of dual language learners in MA that Head Start serves"
+
+hsswdllprop <- headstart_dll/statewide_dll
+hsswdllpercentage <- hsswdllprop * 100
+
+list(
+  icon = "percent",
+  color = "info",
+  value = round(hsswdllpercentage, 2)
+)
+```
+
 ## Temporal Visualizations
 
 ```{r}
 #| fill: false
 
 options(scipen = 999)
-non_e_517_ma |>
-  ggplot(aes(x = year, y = percent_non_e)) +
+overall_data |>
+  mutate(is_ma = case_when(Location == "MASSACHUSETTS" ~ "MASSACHUSETTS",
+                           Location != "MASSACHUSETTS" ~ "Other States")) |>
+  group_by(TimeFrame, is_ma) |>
+  filter(!is.na(is_ma)) |>
+  summarize(dll_children = sum(proxy_dll_under5, na.rm = TRUE),
+            total_population = sum(total_children, na.rm = TRUE)) |>
+  ungroup() |>
+  group_by(TimeFrame) |>
+  mutate(is_ma = case_when(is_ma == "MASSACHUSETTS" ~ "MASSACHUSETTS",
+                           is_ma != "MASSACHUSETTS" ~ "USA"),
+         dll_children = case_when(is_ma == "MASSACHUSETTS" ~ dll_children,
+                           is_ma == "USA" ~ sum(dll_children, na.rm = TRUE)),
+         total_population = case_when(is_ma == "MASSACHUSETTS" ~ total_population,
+                           is_ma == "USA" ~ sum(total_population)),
+         ,
+      percent_dll1 = dll_children / total_population * 100)
+
+  ggplot(aes(x = TimeFrame, y = percent_dll1, col = is_ma, group = is_ma)) +
   geom_line() +
   scale_x_continuous() +
-  scale_y_continuous(limits = c(0,1)) +
+  scale_y_continuous(limits = c(0, 100)) +
   scale_color_manual(values = hs_palette) +
   labs(x = "Year", 
-       y = "% Dual Language Learners",
-       title = paste("Dual Language Learner Population via Age 5-17 Proxy, MA, ",
-                     min(non_e_517_ma$year), 
-                     "-" , 
-                     max(non_e_517_ma$year))) +
+       y = "% DLL Children",
+       col = "",
+       title = paste("DLL Population via 5-17 Proxy, ")) +
   theme_minimal()  +
-  geom_text(aes(label = round(percent_non_e, 2)), 
+  geom_text(aes(label = round(percent_dll1, 2)), 
             vjust = -0.25)
 ```
 
 ```{r}
 #| fill: false
 
-ma_dllenroll |>
-  ggplot(aes(x = TimeFrame, y = dll_prop)) +
-  geom_line() +
-  scale_x_continuous() +
-  scale_y_continuous() +
-  scale_color_manual(values = hs_palette) +
-  labs(x = "Year",
-       y = "% Enrolled that are Dual Language Learners",
-       col = "",
-       title = paste("Head Start Dual Language Learners Served, MA, ",
-                     min(ma_dllenroll$TimeFrame),
-                     "-" ,
-                     max(ma_dllenroll$TimeFrame))) +
-  theme_minimal() +
-  geom_text(aes(label = round(dll_prop, 2)),
-            vjust = -0.25)
-```
-
-```{r}
-#| fill: false
-headstart_dll_ma |>
-  ggplot(aes(x = pir_year, y = percent_dll)) +
+combined_pir |>
+  mutate(is_ma = case_when(State == "MA" ~ "MA",
+                           State != "MA" ~ "Other States")) |>
+  group_by(pir_year, is_ma) |>
+  filter(!is.na(is_ma)) |>
+  summarize(total_dll_enroll = sum(A.27, na.rm = TRUE),
+            total_child_enroll = sum(A.10.g, na.rm = TRUE)) |>
+  ungroup() |>
+  group_by(pir_year) |>
+  mutate(is_ma = case_when(is_ma == "MA" ~ "MA",
+                           is_ma != "MA" ~ "USA"),
+         total_dll_enroll = case_when(is_ma == "MA" ~ total_dll_enroll,
+                           is_ma == "USA" ~ sum(total_dll_enroll, na.rm = TRUE)),
+         total_child_enroll = case_when(is_ma == "MA" ~ total_child_enroll,
+                           is_ma == "USA" ~ sum(total_child_enroll)),
+         ,
+      percent_dll = total_dll_enroll / total_child_enroll * 100) |>
+  ggplot(aes(x = pir_year, y = percent_dll, col = is_ma, group = is_ma)) +
   geom_line() +
   scale_x_continuous() +
   scale_y_continuous() +
   scale_color_manual(values = hs_palette) +
   labs(x = "Year", 
-       y = "% Homeless Children Served",
+       y = "% Enrolled Dual Language Learners",
        col = "",
-       title = paste("Head Start Homeless Served, ",
-                     min(combined_pir$pir_year), 
-                     "-" , 
-                     max(combined_pir$pir_year))) +
+       title = paste("Head Start Dual Language Enrollments")) +
   theme_minimal()  +
-  geom_text(aes(label = round(percent_homeless, 2)), 
+  geom_text(aes(label = round(percent_dll, 2)), 
             vjust = -0.25)
 ```
 
+```{r}
+#| fill: false
+
+overall_data |>
+  mutate(is_ma = case_when(Location == "MASSACHUSETTS" ~ "MASSACHUSETTS",
+                           Location != "MASSACHUSETTS" ~ "Other States")) |>
+  group_by(TimeFrame, is_ma) |>
+  filter(!is.na(is_ma)) |>
+  summarize(dll_children = sum(proxy_dll_under5, na.rm = TRUE),
+            hs_dll = sum(total_dll_enroll, na.rm = TRUE)) |>
+  ungroup() |>
+  group_by(TimeFrame) |>
+  mutate(is_ma = case_when(is_ma == "MASSACHUSETTS" ~ "MASSACHUSETTS",
+                           is_ma != "MASSACHUSETTS" ~ "USA"),
+         dll_children = case_when(is_ma == "MA" ~ dll_children,
+                           is_ma == "USA" ~ sum(dll_children, na.rm = TRUE)),
+         hs_dll = case_when(is_ma == "MASSACHUSETTS" ~ hs_dll,
+                           is_ma == "USA" ~ sum(hs_dll)),
+         ,
+      percent_dll = hs_dll / dll_children * 100) |>
+  ggplot(aes(x = TimeFrame, y = percent_dll, col = is_ma, group = is_ma)) +
+  geom_line() +
+  scale_x_continuous() +
+  scale_y_continuous() +
+  scale_color_manual(values = hs_palette) +
+  labs(x = "Year", 
+       y = "% Dual Language Learners Served",
+       col = "",
+       title = paste("Head Start Dual Language Learners Served")) +
+  theme_minimal()  +
+  geom_text(aes(label = round(percent_dll, 2)), 
+            vjust = -0.25)
+```
 
 ## Rankings
 
