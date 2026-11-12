@@ -121,7 +121,7 @@ overall_data |>
                            Location != "MASSACHUSETTS" ~ "Other States")) |>
   group_by(TimeFrame, is_ma) |>
   filter(!is.na(is_ma)) |>
-  summarize(dll_children = sum(proxy_dll_under5, na.rm = TRUE),
+  summarize(dll_children = sum(proxy_dll, na.rm = TRUE),
             total_population = sum(total_children, na.rm = TRUE)) |>
   ungroup() |>
   group_by(TimeFrame) |>
@@ -132,17 +132,19 @@ overall_data |>
          total_population = case_when(is_ma == "MASSACHUSETTS" ~ total_population,
                            is_ma == "USA" ~ sum(total_population)),
          ,
-      percent_dll1 = dll_children / total_population * 100)
-
+      percent_dll1 = dll_children / total_population * 100) |> 
   ggplot(aes(x = TimeFrame, y = percent_dll1, col = is_ma, group = is_ma)) +
   geom_line() +
   scale_x_continuous() +
   scale_y_continuous(limits = c(0, 100)) +
   scale_color_manual(values = hs_palette) +
   labs(x = "Year", 
-       y = "% DLL Children",
+       y = "% of Children under 5 that are Dual Language Learners",
        col = "",
-       title = paste("DLL Population via 5-17 Proxy, ")) +
+       title = paste("Dual Language Learner Population via 5-17 Census Proxy, ",
+                     min(overall_data$TimeFrame), 
+                     "-" , 
+                     max(overall_data$TimeFrame))) +
   theme_minimal()  +
   geom_text(aes(label = round(percent_dll1, 2)), 
             vjust = -0.25)
@@ -171,12 +173,15 @@ combined_pir |>
   ggplot(aes(x = pir_year, y = percent_dll, col = is_ma, group = is_ma)) +
   geom_line() +
   scale_x_continuous() +
-  scale_y_continuous() +
+  scale_y_continuous(limits = c(0, 100)) +
   scale_color_manual(values = hs_palette) +
   labs(x = "Year", 
        y = "% Enrolled Dual Language Learners",
        col = "",
-       title = paste("Head Start Dual Language Enrollments")) +
+        title = paste("Head Start Dual Language Learner Enrollments,",
+                     min(combined_pir$pir_year), 
+                     "-" , 
+                     max(combined_pir$pir_year))) +
   theme_minimal()  +
   geom_text(aes(label = round(percent_dll, 2)), 
             vjust = -0.25)
@@ -190,13 +195,13 @@ overall_data |>
                            Location != "MASSACHUSETTS" ~ "Other States")) |>
   group_by(TimeFrame, is_ma) |>
   filter(!is.na(is_ma)) |>
-  summarize(dll_children = sum(proxy_dll_under5, na.rm = TRUE),
+  summarize(dll_children = sum(proxy_dll, na.rm = TRUE),
             hs_dll = sum(total_dll_enroll, na.rm = TRUE)) |>
   ungroup() |>
   group_by(TimeFrame) |>
   mutate(is_ma = case_when(is_ma == "MASSACHUSETTS" ~ "MASSACHUSETTS",
                            is_ma != "MASSACHUSETTS" ~ "USA"),
-         dll_children = case_when(is_ma == "MA" ~ dll_children,
+         dll_children = case_when(is_ma == "MASSACHUSETTS" ~ dll_children,
                            is_ma == "USA" ~ sum(dll_children, na.rm = TRUE)),
          hs_dll = case_when(is_ma == "MASSACHUSETTS" ~ hs_dll,
                            is_ma == "USA" ~ sum(hs_dll)),
@@ -205,12 +210,15 @@ overall_data |>
   ggplot(aes(x = TimeFrame, y = percent_dll, col = is_ma, group = is_ma)) +
   geom_line() +
   scale_x_continuous() +
-  scale_y_continuous() +
+  scale_y_continuous(limits = c(0, 25)) +
   scale_color_manual(values = hs_palette) +
   labs(x = "Year", 
-       y = "% Dual Language Learners Served",
+       y = "% Dual Language Learners Children Served",
        col = "",
-       title = paste("Head Start Dual Language Learners Served")) +
+       title = paste("Head Start Dual Language Learners Served, ",
+                     min(overall_data$TimeFrame), 
+                     "-" , 
+                     max(overall_data$TimeFrame))) +
   theme_minimal()  +
   geom_text(aes(label = round(percent_dll, 2)), 
             vjust = -0.25)
@@ -223,17 +231,19 @@ overall_data |>
 #| title: "How Massachusetts ranks compared to other states in terms of percent of children enrolled in Head Start that are dual language learners"
 #| fill: false
 
-dll_state_rank <- combined_pir |>
+dll_state_rank <- 
+  combined_pir |>
   group_by(pir_year, State) |>
   summarize(total_child_enroll = sum(A.10.g, na.rm = TRUE), 
             total_dll_enroll = sum(A.27, na.rm = TRUE),
-            percent_dll = total_dll_enroll / total_child_enroll * 100, 2) |>
+            percent_dll = round(total_dll_enroll / total_child_enroll * 100, 2)) |>
+  arrange(desc(percent_dll)) |>
   ungroup() |>
   group_by(pir_year) |>
   mutate(state_rank = rank(-percent_dll, ties.method = "min")) |>
   ungroup()
 
-ma_ranking <- dll_state_rank |>
+ma_state_rank <- dll_state_rank |>
   filter(State == "MA" & pir_year == 2024) |>
   select(state_rank) |>
   pull()
@@ -241,9 +251,11 @@ ma_ranking <- dll_state_rank |>
 list(
   icon = "award",
   color = "info",
-  value = ma_ranking
+  value = ma_state_rank
 )
 ```
+
+#note: remember to get new filtered data to exclude territories
 
 ```{r}
 #| fill: false
@@ -253,6 +265,7 @@ dll_state_rank |>
   arrange(desc(percent_dll)) |>
   select(State, 
          `% dual language learners` = percent_dll ) |>
+  mutate(Row = row_number(), .before = 1) |>
   kable()
 ```
 
@@ -270,7 +283,7 @@ labels <- paste("<strong>",
                 us_states$NAME,
                 "</strong><br>Rank:", 
                 us_states$state_rank,
-                "<br>% dual language learners:",
+                "<br>% Dual Language Learners Enrolled:",
                 us_states$percent_dll) |>
   lapply(htmltools::HTML)
 
@@ -294,4 +307,3 @@ dll_hs_map <- leaflet(width = "100%") %>%
 
 dll_hs_map
 ```
- 
