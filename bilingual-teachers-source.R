@@ -144,4 +144,9 @@ pr_pums <- pr_pums |>
                           SPEAKENG == 6 ~ 1),
          LANX_label = case_when(LANX == .5 ~ "N/A or blank",
                                 LANX == 1 ~ "Yes, speaks another language",
-                                LANX == 2 ~ "No, speaks only English"))
+                                LANX == 2 ~ "No, speaks only English"),
+         STATE = 72,
+         STATE_label = "Puerto Rico/PR")
+
+pr_split <- split(pr_pums, pr_pums$YEAR)
+rbind(pums_recoded_2021)
