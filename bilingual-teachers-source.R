@@ -165,3 +165,32 @@ pums_recoded_2023 <- pums_recoded_2023 |>
   bind_rows(pr_split$`2023`)
 pums_recoded_2024 <- pums_recoded_2024 |>
   bind_rows(pr_split$`2024`)
+
+employed_edu_lang_vars <- variables |>
+  filter(grepl("B16010", name))
+
+employed_edu_lang <- get_acs(
+  geography = "state",
+  variables = employed_edu_lang_vars$name,
+  year = 2024,
+  survey = "acs5"
+)
+
+employed_edu_lang <- employed_edu_lang |>
+  mutate(variable_description = rep(employed_edu_lang_vars$label, 52))
+
+employed_edu_lang_summary <- employed_edu_lang |>
+  summarize(total_employed = sum(estimate[str_detect(variable_description, "Not in labor force", negate = TRUE)]),
+            prop_employed = total_employed/ sum(estimate[variable == "B16010_001"]),
+            total_unemployed = sum(estimate[str_detect(variable_description, "Not in labor force")]),
+            prop_unemployed = total_unemployed/ sum(estimate[variable == "B16010_001"]),
+            total_not_only_english = sum(estimate[str_detect(variable_description, "only English", negate = TRUE)]),
+            total_not_only_english_employed = sum(estimate[str_detect(variable_description, "only English", negate = TRUE) & 
+                                                             str_detect(variable_description, "Not in labor force", negate = TRUE)]),
+            prop_not_only_english_employed = total_not_only_english_employed/total_not_only_english,
+            total_only_english = sum(estimate[str_detect(variable_description, "only English")]),
+            total_only_english_employed = sum(estimate[str_detect(variable_description, "only English") & 
+                                                       str_detect(variable_description, "Not in labor force", negate = TRUE)]),
+            prop_only_english_employed = total_only_english_employed/total_only_english,
+            prop_not_only_english_unemployed = 1 - prop_not_only_english_employed,
+            prop_only_english_unemployed = 1 - prop_only_english_employed)
