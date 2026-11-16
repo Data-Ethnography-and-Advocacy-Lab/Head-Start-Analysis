@@ -136,17 +136,26 @@ pr_pums <- read_ipums_micro(ddi)
 
 pr_pums <- pr_pums |>
   rename(PWGTP = PERWT) |>
-  mutate(LANX = case_when(SPEAKENG == 0 ~ .5,
-                          SPEAKENG == 3 ~ 2,
-                          SPEAKENG == 1 ~ 1,
-                          SPEAKENG == 4 ~ 1,
-                          SPEAKENG == 5 ~ 1,
-                          SPEAKENG == 6 ~ 1),
-         LANX_label = case_when(LANX == .5 ~ "N/A or blank",
-                                LANX == 1 ~ "Yes, speaks another language",
-                                LANX == 2 ~ "No, speaks only English"),
-         STATE = 72,
+  mutate(LANX = case_when(SPEAKENG == 0 ~ ".5",
+                          SPEAKENG == 3 ~ "2",
+                          SPEAKENG == 1 ~ "1",
+                          SPEAKENG == 4 ~ "1",
+                          SPEAKENG == 5 ~ "1",
+                          SPEAKENG == 6 ~ "1"),
+         LANX_label = case_when(LANX == ".5" ~ "N/A or blank",
+                                LANX == "1" ~ "Yes, speaks another language",
+                                LANX == "2" ~ "No, speaks only English"),
+         STATE = "72",
          STATE_label = "Puerto Rico/PR")
 
 pr_split <- split(pr_pums, pr_pums$YEAR)
-rbind(pums_recoded_2021)
+
+pr_split$`2021` <- pr_split$`2021` |>
+  rename(ST = STATE) |>
+  rename(ST_label = STATE_label)
+pr_split$`2022` <- pr_split$`2022` |>
+  rename(ST = STATE,
+         ST_label = STATE_label)
+
+pums_recoded_2021 <- pums_recoded_2021 |>
+  bind_rows(pr_split$`2021`)
