@@ -159,3 +159,9 @@ pr_split$`2022` <- pr_split$`2022` |>
 
 pums_recoded_2021 <- pums_recoded_2021 |>
   bind_rows(pr_split$`2021`)
+pums_recoded_2022 <- pums_recoded_2022 |>
+  bind_rows(pr_split$`2022`)
+pums_recoded_2023 <- pums_recoded_2023 |>
+  bind_rows(pr_split$`2023`)
+pums_recoded_2024 <- pums_recoded_2024 |>
+  bind_rows(pr_split$`2024`)
