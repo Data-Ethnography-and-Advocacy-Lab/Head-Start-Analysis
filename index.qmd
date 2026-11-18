@@ -1110,6 +1110,8 @@ pir_b |>
 
 Together, these two graphs show why the NPRM is especially of concern in Massachusetts. As a whole and at Head Start, Massachusetts has a higher proportion of multilingual early educators than the rest of the nation, At Head Start, the proportion of multilingual staff is also increasing faster than the rest of the nation. This means that nearly one third of Head Start staff nationally, and nearly half in Massachusetts, will have to be retrained or are at risk of losing their jobs if the NPRM passes in its current form. This has the potential to be incredibly disruptive in Massachusetts, as nearly half of educators must entirely transform how they teach.
 
+Additionally, the NPRM prohibits preferential hiring and salary incentives for bilingual teachers. Since nearly half of teachers in MA are bilingual, a significant number of them may decide to pursue other opportunities, and recruiting bilingual teachers would become challenging for centers.
+
 ```{r}
 #| fill: false
 
