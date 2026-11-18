@@ -1272,6 +1272,40 @@ staff_hs_map <- leaflet(width = "100%") %>%
 staff_hs_map
 ```
 
+## Bilingual Students vs Teachers Comparison
+```{r}
+#| fill: false
+combined_pir |>
+  mutate(is_ma = case_when(State == "MA" ~ "MA",
+                           State != "MA" ~ "Other States")) |>
+  group_by(pir_year, is_ma) |>
+  filter(!is.na(is_ma)) |>
+  summarize(bilingual_teachers_etc = sum(B.14, na.rm = TRUE),
+             total_preschool_classroom = sum(`B.3-1`, na.rm = TRUE),
+            total_preschool_asst = sum(`B.3-2`, na.rm = TRUE),
+            total_infant_toddler_teacher = sum(B.6, na.rm = TRUE),
+            total_home_visitor = sum(B.8, na.rm = TRUE),
+            total_FCC = sum(B.9, na.rm = TRUE),
+            denom = (total_preschool_classroom + total_preschool_asst + total_infant_toddler_teacher + total_home_visitor + total_FCC),
+            total_child_enroll = sum(A.10.g, na.rm = TRUE), 
+            total_dll_enroll = sum(A.27, na.rm = TRUE)) |>
+  ungroup() |>
+  group_by(pir_year) |>
+  mutate(is_ma = case_when(is_ma == "MA" ~ "MA",
+                           is_ma != "MA" ~ "USA"),
+         bilingual_teachers_etc = case_when(is_ma == "MA" ~ bilingual_teachers_etc,
+                           is_ma == "USA" ~ sum(bilingual_teachers_etc, na.rm = TRUE)),
+         denom = case_when(is_ma == "MA" ~ denom,
+                           is_ma == "USA" ~ sum(denom)),
+         total_dll_enroll = case_when(is_ma == "MA" ~ total_dll_enroll,
+                           is_ma == "USA" ~ sum(total_dll_enroll, na.rm = TRUE)),
+         total_child_enroll = case_when(is_ma == "MA" ~ total_child_enroll,
+                           is_ma == "USA" ~ sum(total_child_enroll, na.rm = TRUE)),
+          percent_bilingual_teachers_etc = bilingual_teachers_etc / denom * 100,
+         percent_dll = total_dll_enroll/total_child_enroll * 100)
+```
+
+
 ## Appendix {.appendix}
 ```{r}
 pir_b |>
