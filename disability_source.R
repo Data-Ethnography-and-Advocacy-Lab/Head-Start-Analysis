@@ -65,8 +65,8 @@ hs_disability_by_state <-
   combined_pir |>
   group_by(pir_year, State) |>
   summarize(TOTAL_HS_ENROLL = sum(A.10.g, na.rm = TRUE),
-            HS_IEP = sum(C.24, na.rm = TRUE),
-            HS_IFSP = sum(C.25, na.rm = TRUE),
+            HS_IEP = sum(C.24, na.rm = TRUE) - sum(C.24.b, na.rm = TRUE),
+            HS_IFSP = sum(C.25, na.rm = TRUE) - sum(C.25.b, na.rm = TRUE),
             HS_DISABLED = HS_IEP + HS_IFSP,
             HS_PROGRAMS = n(),
             PERCENT_HS_DISABLED = HS_DISABLED / TOTAL_HS_ENROLL * 100,
