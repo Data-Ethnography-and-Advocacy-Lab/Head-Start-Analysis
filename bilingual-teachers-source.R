@@ -2,6 +2,7 @@ library(tidycensus)
 library(purrr)
 library(dplyr)
 library(tidyverse)
+library(ipumsr)
 
 variables <- load_variables(2024, "acs5")
 
@@ -129,3 +130,67 @@ total_pop_by_year <-
       year = .x, 
       survey = "acs1"),
     .id = "year")
+
+ddi <- read_ipums_ddi("data/usa_00001.xml")
+pr_pums <- read_ipums_micro(ddi)
+
+pr_pums <- pr_pums |>
+  rename(PWGTP = PERWT) |>
+  mutate(LANX = case_when(SPEAKENG == 0 ~ ".5",
+                          SPEAKENG == 3 ~ "2",
+                          SPEAKENG == 1 ~ "1",
+                          SPEAKENG == 4 ~ "1",
+                          SPEAKENG == 5 ~ "1",
+                          SPEAKENG == 6 ~ "1"),
+         LANX_label = case_when(LANX == ".5" ~ "N/A or blank",
+                                LANX == "1" ~ "Yes, speaks another language",
+                                LANX == "2" ~ "No, speaks only English"),
+         STATE = "72",
+         STATE_label = "Puerto Rico/PR")
+
+pr_split <- split(pr_pums, pr_pums$YEAR)
+
+pr_split$`2021` <- pr_split$`2021` |>
+  rename(ST = STATE) |>
+  rename(ST_label = STATE_label)
+pr_split$`2022` <- pr_split$`2022` |>
+  rename(ST = STATE,
+         ST_label = STATE_label)
+
+pums_recoded_2021 <- pums_recoded_2021 |>
+  bind_rows(pr_split$`2021`)
+pums_recoded_2022 <- pums_recoded_2022 |>
+  bind_rows(pr_split$`2022`)
+pums_recoded_2023 <- pums_recoded_2023 |>
+  bind_rows(pr_split$`2023`)
+pums_recoded_2024 <- pums_recoded_2024 |>
+  bind_rows(pr_split$`2024`)
+
+employed_edu_lang_vars <- variables |>
+  filter(grepl("B16010", name))
+
+employed_edu_lang <- get_acs(
+  geography = "state",
+  variables = employed_edu_lang_vars$name,
+  year = 2024,
+  survey = "acs5"
+)
+
+employed_edu_lang <- employed_edu_lang |>
+  mutate(variable_description = rep(employed_edu_lang_vars$label, 52))
+
+employed_edu_lang_summary <- employed_edu_lang |>
+  summarize(total_employed = sum(estimate[str_detect(variable_description, "Not in labor force", negate = TRUE)]),
+            prop_employed = total_employed/ sum(estimate[variable == "B16010_001"]),
+            total_unemployed = sum(estimate[str_detect(variable_description, "Not in labor force")]),
+            prop_unemployed = total_unemployed/ sum(estimate[variable == "B16010_001"]),
+            total_not_only_english = sum(estimate[str_detect(variable_description, "only English", negate = TRUE)]),
+            total_not_only_english_employed = sum(estimate[str_detect(variable_description, "only English", negate = TRUE) & 
+                                                             str_detect(variable_description, "Not in labor force", negate = TRUE)]),
+            prop_not_only_english_employed = total_not_only_english_employed/total_not_only_english,
+            total_only_english = sum(estimate[str_detect(variable_description, "only English")]),
+            total_only_english_employed = sum(estimate[str_detect(variable_description, "only English") & 
+                                                       str_detect(variable_description, "Not in labor force", negate = TRUE)]),
+            prop_only_english_employed = total_only_english_employed/total_only_english,
+            prop_not_only_english_unemployed = 1 - prop_not_only_english_employed,
+            prop_only_english_unemployed = 1 - prop_only_english_employed)
