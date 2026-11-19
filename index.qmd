@@ -1303,8 +1303,27 @@ combined_pir |>
                            is_ma == "USA" ~ sum(total_dll_enroll, na.rm = TRUE)),
          total_child_enroll = case_when(is_ma == "MA" ~ total_child_enroll,
                            is_ma == "USA" ~ sum(total_child_enroll, na.rm = TRUE)),
-          percent_bilingual_teachers_etc = bilingual_teachers_etc / denom * 100,
-         percent_dll = total_dll_enroll/total_child_enroll * 100)
+         percent_bilingual_teachers_etc = bilingual_teachers_etc / denom * 100,
+         percent_dll = total_dll_enroll/total_child_enroll * 100) |>
+  pivot_longer(
+    cols = c(percent_bilingual_teachers_etc, percent_dll),
+    names_to = "variable",
+    values_to = "value") |>
+  ggplot(aes(x = pir_year, y = value, col = is_ma, group = is_ma)) +
+  geom_line() +
+  facet_wrap(~ variable) +
+  scale_x_continuous() +
+  scale_y_continuous(limits = c(0, 100)) +
+  scale_color_manual(values = hs_palette) +
+  labs(x = "Year", 
+       y = "% Change",
+       col = "",
+       title = paste("Head Start Change in Bilingual Teachers and DLLs, ",
+                     min(combined_pir$pir_year), 
+                     "-" , 
+                     max(combined_pir$pir_year))) +
+  theme_minimal()
+
 ```
 
 
