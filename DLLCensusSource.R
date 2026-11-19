@@ -140,6 +140,36 @@ agechart_2124_groups <- aggregate(
   FUN = sum,
   na.rm = TRUE)
 
+headstart_dll_years <- pir_a |>
+  group_by(pir_year) |>
+  summarize(total_child_enroll = sum(A.10.g, na.rm = TRUE), 
+            total_dll_enroll = sum(A.27, na.rm = TRUE),
+            percent_dll = total_dll_enroll / total_child_enroll * 100) |>
+  arrange(desc(percent_dll))
+
+headstart_dll_states <- pir_a |>
+  group_by(State, pir_year) |>
+  filter(pir_year == 2024) |>
+  summarize(total_child_enroll = sum(A.10.g, na.rm = TRUE), 
+            total_dll_enroll = sum(A.27, na.rm = TRUE),
+            percent_dll = total_dll_enroll / total_child_enroll * 100) |>
+  arrange(desc(percent_dll))
+
+headstart_dll_all <- pir_a |>
+  group_by(State, pir_year) |>
+  summarize(total_child_enroll = sum(A.10.g, na.rm = TRUE), 
+            total_dll_enroll = sum(A.27, na.rm = TRUE),
+            percent_dll = total_dll_enroll / total_child_enroll * 100) |>
+  arrange(desc(percent_dll))
+
+headstart_dll_ma <- pir_a |>
+  filter(State == "MA") |>
+  group_by(pir_year) |>
+  summarize(total_child_enroll = sum(A.10.g, na.rm = TRUE), 
+            total_dll_enroll = sum(A.27, na.rm = TRUE),
+            percent_dll = total_dll_enroll / total_child_enroll * 100) |>
+  arrange(desc(percent_dll))
+
 usa_dllenroll <- left_join(agechart_2124_groups, headstart_dll_years, 
                            by = c("TimeFrame" = "pir_year"))|>
   mutate(dll_prop = total_dll_enroll/proxy_24)
@@ -178,33 +208,3 @@ statewide_children <- overall_data |>
 statewide_children <- statewide_children$total_children[1]
 
 statewide_percent <- statewide_dll/statewide_children
-
-headstart_dll_years <- pir_a |>
-  group_by(pir_year) |>
-  summarize(total_child_enroll = sum(A.10.g, na.rm = TRUE), 
-            total_dll_enroll = sum(A.27, na.rm = TRUE),
-            percent_dll = total_dll_enroll / total_child_enroll * 100) |>
-  arrange(desc(percent_dll))
-
-headstart_dll_states <- pir_a |>
-  group_by(State, pir_year) |>
-  filter(pir_year == 2024) |>
-  summarize(total_child_enroll = sum(A.10.g, na.rm = TRUE), 
-            total_dll_enroll = sum(A.27, na.rm = TRUE),
-            percent_dll = total_dll_enroll / total_child_enroll * 100) |>
-  arrange(desc(percent_dll))
-
-headstart_dll_all <- pir_a |>
-  group_by(State, pir_year) |>
-  summarize(total_child_enroll = sum(A.10.g, na.rm = TRUE), 
-            total_dll_enroll = sum(A.27, na.rm = TRUE),
-            percent_dll = total_dll_enroll / total_child_enroll * 100) |>
-  arrange(desc(percent_dll))
-
-headstart_dll_ma <- pir_a |>
-  filter(State == "MA") |>
-  group_by(pir_year) |>
-  summarize(total_child_enroll = sum(A.10.g, na.rm = TRUE), 
-            total_dll_enroll = sum(A.27, na.rm = TRUE),
-            percent_dll = total_dll_enroll / total_child_enroll * 100) |>
-  arrange(desc(percent_dll))
