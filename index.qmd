@@ -432,7 +432,7 @@ ma_disabled_total_2024 <- disability_under_5 |>
 list(
   icon = "hash",
   color = "info",
-  value = ma_disabled_total_2024
+  value = format(ma_disabled_total_2024, big.mark = ",")
 )
 ```
 
@@ -448,8 +448,9 @@ ma_disabled_percent_2024 <- disability_under_5 |>
 list(
   icon = "percent",
   color = "info",
-  value = round(ma_disabled_percent_2024, 2)
-)
+  value = format(round(ma_disabled_percent_2024, 2), big.mark = ",")
+  )
+
 ```
 
 ## Head Start Disability Support, MA, 2024
@@ -466,8 +467,8 @@ ma_total_hs_disabled_2024 <- disability_under_5 |>
 list(
   icon = "hash",
   color = "info",
-  value = ma_total_hs_disabled_2024
-)
+  value = format(ma_total_hs_disabled_2024, big.mark = ",")
+  )
 ```
 
 ```{r}
@@ -482,8 +483,8 @@ ma_percent_hs_disabled_2024 <- disability_under_5 |>
 list(
   icon = "percent",
   color = "info",
-  value = round(ma_percent_hs_disabled_2024, 2)
-)
+  value = format(round(ma_percent_hs_disabled_2024, 2), big.mark = ",")
+  )
 ```
 
 ```{r}
@@ -548,7 +549,8 @@ combined_pir |>
                            State != "MA" ~ "Other States")) |>
   group_by(pir_year, is_ma) |>
   filter(!is.na(is_ma)) |>
-  summarize(disabled_children = sum(C.24, na.rm = TRUE) + sum(C.25, na.rm = TRUE),
+  summarize(disabled_children = sum(C.24, na.rm = TRUE) - sum(C.24.b, na.rm = TRUE) +
+                                sum(C.25, na.rm = TRUE) - sum(C.25.b, na.rm = TRUE),
             total_child_enroll = sum(A.10.g, na.rm = TRUE)) |>
   ungroup() |>
   group_by(pir_year) |>
@@ -605,7 +607,7 @@ disability_under_5 |>
   labs(x = "Year",
        y = "% Children Receiving IDEA Services 0-5 Served by Head Start",
        col = "",
-       title = "Head Start Share of IDEA Receiving Children 0-5, 2021 - 2024") +
+       title = "Head Start Share of Children Receiving IDEA 0-5, 2021 - 2024") +
   theme_minimal() +
   geom_text(aes(label = round(percent_served, 2)),
             vjust = -0.25)
@@ -623,7 +625,8 @@ disability_under_5 |>
 
 disablity_state_rank <- combined_pir |>
   group_by(pir_year, State) |>
-  summarize(disabled_children = sum(C.24, na.rm = TRUE) + sum(C.25, na.rm = TRUE),
+  summarize(disabled_children = sum(C.24, na.rm = TRUE) - sum(C.24.b, na.rm = TRUE) +
+                                sum(C.25, na.rm = TRUE) - sum(C.25.b, na.rm = TRUE),
             total_child_enroll = sum(A.10.g, na.rm = TRUE),
       percent_disabled = round(disabled_children / total_child_enroll * 100, 2)) |>
   ungroup() |>
@@ -650,7 +653,8 @@ list(
 disablity_state_rank |>
   filter(pir_year == 2024 & (State == "MA" | state_rank <= 5)) |>
   arrange(desc(percent_disabled)) |>
-  select(State, 
+  select(Rank = state_rank, 
+         State, 
          `% receiving disablity services` = percent_disabled ) |>
   kable()
 ```
@@ -692,6 +696,99 @@ disability_hs_map <- leaflet(width = "100%") %>%
             values = ~percent_disabled)
 
 disability_hs_map
+```
+
+## IDEA Evaluation Gap
+
+Under current standards, Head Start programs must serve children with suspected disabilities while those children wait to be evaluated for IDEA eligibility. However, the 2026 NPRM would remove that requirement. In Massachusetts the most common reason is an evaluation the responsible agency has not yet completed, meaning these children would lose a guarantee of services while they wait.
+
+## IDEA Evaluation Plots
+
+```{r}
+#| fill: false
+
+combined_pir |>
+  mutate(is_ma = case_when(State == "MA" ~ "MA",
+                           State != "MA" ~ "Other States")) |>
+  group_by(pir_year, is_ma) |>
+  filter(!is.na(is_ma)) |>
+  summarize(not_evaluated = sum(C.22.b, na.rm = TRUE),
+            referred = sum(C.22, na.rm = TRUE),
+            .groups = "drop") |>
+  group_by(pir_year) |>
+  mutate(is_ma = case_when(is_ma == "MA" ~ "MA",
+                           is_ma != "MA" ~ "USA"),
+         not_evaluated = case_when(is_ma == "MA" ~ not_evaluated,
+                           is_ma == "USA" ~ sum(not_evaluated, na.rm = TRUE)),
+         referred = case_when(is_ma == "MA" ~ referred,
+                           is_ma == "USA" ~ sum(referred, na.rm = TRUE)),
+         percent_not_evaluated = not_evaluated / referred * 100) |>
+  ggplot(aes(x = pir_year, y = percent_not_evaluated, col = is_ma, group = is_ma)) +
+  geom_line() +
+  scale_color_manual(values = hs_palette) +
+  labs(x = "Year",
+       y = "% of Referred Children Not Evaluated",
+       col = "",
+       title = "Children Referred for IDEA Evaluation Who Were Not Evaluated, 2021 - 2025") +
+  theme_minimal() +
+  geom_text(aes(label = round(percent_not_evaluated, 2)), vjust = -0.25)
+```
+
+```{r}
+#| fill: false
+
+combined_pir |>
+  filter(State == "MA") |>
+  group_by(pir_year) |>
+  summarize(`Evaluation pending (agency)` = sum(C.23.c, na.rm = TRUE),
+            `Parent refused` = sum(C.23.b, na.rm = TRUE),
+            `Assigned to RTI` = sum(C.23.a, na.rm = TRUE),
+            `Other` = sum(C.23.d, na.rm = TRUE),
+            .groups = "drop") |>
+  pivot_longer(-pir_year, names_to = "reason", values_to = "n") |>
+  mutate(reason = factor(reason, levels = c("Evaluation pending (agency)",
+                                            "Parent refused",
+                                            "Assigned to RTI",
+                                            "Other"))) |>
+  ggplot(aes(x = pir_year, y = n, col = reason, group = reason)) +
+  geom_line() +
+  scale_color_manual(values = hs_palette) +
+  labs(x = "Year",
+       y = "Number of Children (MA)",
+       col = "",
+       title = "Reported Reasons MA Children Referred for IDEA Were Not Evaluated, 2021 - 2025") +
+  theme_minimal() +
+  geom_text(aes(label = n), vjust = -0.5, show.legend = FALSE)
+```
+
+```{r}
+#| fill: false
+
+combined_pir |>
+  filter(State == "MA") |>
+  group_by(pir_year) |>
+  summarize(enroll = sum(A.10.g, na.rm = TRUE),
+            `Receiving services` = sum(C.24, na.rm = TRUE) - sum(C.24.b, na.rm = TRUE) +
+                                   sum(C.25, na.rm = TRUE) - sum(C.25.b, na.rm = TRUE),
+            `Has plan, not receiving` = sum(C.24.b, na.rm = TRUE) + sum(C.25.b, na.rm = TRUE),
+            `Pending evaluation` = sum(C.23.c, na.rm = TRUE),
+            `Other referred, not evaluated` = sum(C.22.b, na.rm = TRUE) - sum(C.23.c, na.rm = TRUE),
+            .groups = "drop") |>
+  pivot_longer(-c(pir_year, enroll), names_to = "status", values_to = "n") |>
+  mutate(pct = n / enroll * 100,
+         status = factor(status, levels = c("Other referred, not evaluated",
+                                            "Pending evaluation",
+                                            "Has plan, not receiving",
+                                            "Receiving services"))) |>
+  ggplot(aes(x = pir_year, y = pct, fill = status)) +
+  geom_col() +
+  scale_fill_manual(values = hs_palette) +
+  labs(x = "Year",
+       y = "% of Enrolled Children",
+       fill = "",
+       title = "MA Head Start: Children Receiving IDEA Services vs. Identified and Waiting, 2021 - 2025") +
+  theme_minimal() +
+  geom_text(aes(label = ifelse(status == "Has plan, not receiving", "", round(pct, 1))), position = position_stack(vjust = 0.5), size = 3)
 ```
 
 ## Dual Language Learners in MA, 2024
