@@ -1,5 +1,14 @@
 ---
-title: "DLLs-bilingual-teachers-brief"
-format: typst
+title: "Dual Language Learners and Bilingual Teachers"
+format:
+   typst:
+      template-partials: 
+         - typst-show.typ
+         - typst-template.typ
+filters:
+  - wrapped
+execute:
+  echo: false
+  messages: false
+  warnings: false
 ---
-
