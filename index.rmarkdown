@@ -1,0 +1,1436 @@
+---
+title: "MA Head Start Data Briefs"
+author: "Data Ethnography and Advocacy Lab"
+editor: source
+execute:
+  echo: false
+  messages: false
+  warnings: false
+format: 
+  dashboard:
+    scrolling: true
+    theme: zephyr
+---
+
+```{r}
+#| results: "hide" 
+
+library(tidyverse)
+library(ggrepel)
+library(knitr)
+library(leaflet)
+library(tigris)
+library(sf)
+library(htmltools)
+library(gt)
+library(gtExtras)
+
+options(tidyverse.quiet = TRUE)
+options(tidycensus.quiet = TRUE)
+options(download.file.method = "auto", quiet = TRUE) 
+
+source("pir_source.R")
+source("homeless_source.R")
+source("disability_source.R")
+source("DLLCensusSource.R")
+source("bilingual-teachers-source.R")
+hs_palette <- c("#e51937","#0063a6", "#F18F01","#499f68","#84dcc6","#693668","#373d20","#717744")
+```
+
+
+# Homelessness
+
+## Homelessness in MA in 2024
+
+
+```{r}
+#| content: valuebox
+#| title: "Total number of infants and children 0-5 that are homeless in MA"
+
+ma_homeless_total_2024 <- ed_totals_under_5 |>
+  filter(STATENAME == "MASSACHUSETTS" & YEAR_END == 2024) |>
+  select(HOMELESS_UNDER_5_GRADE_1) |>
+  pull()
+
+list(
+  icon = "hash",
+  color = "info",
+  value = format(ma_homeless_total_2024, big.mark = ",")
+)
+```
+
+```{r}
+#| content: valuebox
+#| title: "Proportion of the infants and children 0-5 that are homeless in MA"
+
+ma_homeless_percent_2024 <- ed_totals_under_5 |>
+  filter(STATENAME == "MASSACHUSETTS" & YEAR_END == 2024) |>
+  select(PERCENT_UNDER_5_HOMELESS) |>
+  pull()
+
+list(
+  icon = "percent",
+  color = "info",
+  value = round(ma_homeless_percent_2024, 2)
+)
+```
+
+
+## Head Start Homeless Support, MA, 2024
+
+
+```{r}
+#| content: valuebox
+#| title: "Total number of homeless children that Head Start serves in MA"
+
+ma_total_hs_homeless_2024 <- hs_homeless_by_state |>
+  filter(State == "MA" & pir_year == 2024) |>
+  select(TOTAL_HS_HOMELESS_ENROLL) |>
+  pull()
+
+list(
+  icon = "hash",
+  color = "info",
+  value = format(ma_total_hs_homeless_2024, big.mark = ",")
+)
+```
+
+```{r}
+#| content: valuebox
+#| title: "Percent of children enrolled in Head Start that are homeless in MA"
+
+ma_percent_hs_homeless_2024 <- hs_homeless_by_state |>
+  filter(State == "MA" & pir_year == 2024) |>
+  select(PERCENT_HS_ENROLL_HOMELESS) |>
+  pull()
+
+list(
+  icon = "percent",
+  color = "info",
+  value = round(ma_percent_hs_homeless_2024, 2)
+)
+```
+
+```{r}
+#| content: valuebox
+#| title: "Percent of homeless children in MA that Head Start serves"
+
+ma_percent_hs_homeless_serves_2024 <- ed_totals_under_5 |>
+  filter(STATENAME == "MASSACHUSETTS" & YEAR_END == 2024) |>
+  select(PERCENT_HOMELESS_POP_HS) |>
+  pull()
+
+list(
+  icon = "percent",
+  color = "info",
+  value = round(ma_percent_hs_homeless_serves_2024, 2)
+)
+```
+
+
+## Temporal Visualizations
+
+
+```{r}
+#| fill: false
+
+options(scipen = 999)
+ed_totals_under_5 |>
+  mutate(is_ma = case_when(ST == "MA" ~ "MA",
+                           ST != "MA" ~ "Other States")) |>
+  group_by(YEAR_END, is_ma) |>
+  filter(!is.na(is_ma)) |>
+  summarize(homeless_children = sum(HOMELESS_UNDER_5_GRADE_1, na.rm = TRUE),
+            total_population = sum(POPULATION_UNDER_5, na.rm = TRUE)) |>
+  ungroup() |>
+  group_by(YEAR_END) |>
+  mutate(is_ma = case_when(is_ma == "MA" ~ "MA",
+                           is_ma != "MA" ~ "USA"),
+         homeless_children = case_when(is_ma == "MA" ~ homeless_children,
+                           is_ma == "USA" ~ sum(homeless_children, na.rm = TRUE)),
+         total_population = case_when(is_ma == "MA" ~ total_population,
+                           is_ma == "USA" ~ sum(total_population)),
+         ,
+      percent_homeless = homeless_children / total_population * 100) |>
+  ggplot(aes(x = YEAR_END, y = percent_homeless, col = is_ma, group = is_ma)) +
+  geom_line() +
+  scale_x_continuous() +
+  scale_y_continuous() +
+  scale_color_manual(values = hs_palette) +
+  labs(x = "Year", 
+       y = "% Homeless Children",
+       col = "",
+       title = paste("Homeless Population via Grade 1 Proxy, ",
+                     min(ed_totals_under_5$YEAR_END), 
+                     "-" , 
+                     max(ed_totals_under_5$YEAR_END))) +
+  theme_minimal()  +
+  geom_text(aes(label = round(percent_homeless, 2)), 
+            vjust = -0.25)
+
+```
+
+```{r}
+#| fill: false
+
+combined_pir |>
+  mutate(is_ma = case_when(State == "MA" ~ "MA",
+                           State != "MA" ~ "Other States")) |>
+  group_by(pir_year, is_ma) |>
+  filter(!is.na(is_ma)) |>
+  summarize(homeless_children = sum(C.48, na.rm = TRUE),
+            total_child_enroll = sum(A.10.g, na.rm = TRUE)) |>
+  ungroup() |>
+  group_by(pir_year) |>
+  mutate(is_ma = case_when(is_ma == "MA" ~ "MA",
+                           is_ma != "MA" ~ "USA"),
+         homeless_children = case_when(is_ma == "MA" ~ homeless_children,
+                           is_ma == "USA" ~ sum(homeless_children, na.rm = TRUE)),
+         total_child_enroll = case_when(is_ma == "MA" ~ total_child_enroll,
+                           is_ma == "USA" ~ sum(total_child_enroll)),
+         ,
+      percent_homeless = homeless_children / total_child_enroll * 100) |>
+  ggplot(aes(x = pir_year, y = percent_homeless, col = is_ma, group = is_ma)) +
+  geom_line() +
+  scale_x_continuous() +
+  scale_y_continuous() +
+  scale_color_manual(values = hs_palette) +
+  labs(x = "Year", 
+       y = "% Enrolled Homeless Children",
+       col = "",
+       title = paste("Head Start Homeless Enrollments, ",
+                     min(combined_pir$pir_year), 
+                     "-" , 
+                     max(combined_pir$pir_year))) +
+  theme_minimal()  +
+  geom_text(aes(label = round(percent_homeless, 2)), 
+            vjust = -0.25)
+
+```
+
+```{r}
+#| fill: false
+
+ed_totals_under_5 |>
+  mutate(is_ma = case_when(ST == "MA" ~ "MA",
+                           ST != "MA" ~ "Other States")) |>
+  group_by(YEAR_END, is_ma) |>
+  filter(!is.na(is_ma)) |>
+  summarize(homeless_children = sum(HOMELESS_UNDER_5_GRADE_1, na.rm = TRUE),
+            hs_homless = sum(TOTAL_HS_HOMELESS_ENROLL, na.rm = TRUE)) |>
+  ungroup() |>
+  group_by(YEAR_END) |>
+  mutate(is_ma = case_when(is_ma == "MA" ~ "MA",
+                           is_ma != "MA" ~ "USA"),
+         homeless_children = case_when(is_ma == "MA" ~ homeless_children,
+                           is_ma == "USA" ~ sum(homeless_children, na.rm = TRUE)),
+         hs_homless = case_when(is_ma == "MA" ~ hs_homless,
+                           is_ma == "USA" ~ sum(hs_homless)),
+         ,
+      percent_homeless = hs_homless / homeless_children * 100) |>
+  ggplot(aes(x = YEAR_END, y = percent_homeless, col = is_ma, group = is_ma)) +
+  geom_line() +
+  scale_x_continuous() +
+  scale_y_continuous() +
+  scale_color_manual(values = hs_palette) +
+  labs(x = "Year", 
+       y = "% Homeless Children Served",
+       col = "",
+       title = paste("Head Start Homeless Served, ",
+                     min(combined_pir$pir_year), 
+                     "-" , 
+                     max(combined_pir$pir_year))) +
+  theme_minimal()  +
+  geom_text(aes(label = round(percent_homeless, 2)), 
+            vjust = -0.25)
+
+```
+
+
+## Rankings
+
+
+```{r}
+#| fill: false
+#| content: valuebox
+#| title: "How Massachusetts ranks compared to other states in terms of percent of children enrolled in Head Start that are homeless "
+
+percent_homeless_table <-
+  combined_pir |>
+  group_by(pir_year, State) |>
+  summarize(total_child_enroll = sum(A.10.g, na.rm = TRUE), 
+      total_homeless_enroll = sum(C.48, na.rm = TRUE),
+      num_homeless_na = sum(is.na(C.48)),
+      percent_homeless = round(total_homeless_enroll / total_child_enroll * 100, 2)) |>
+  arrange(desc(percent_homeless)) |>
+  ungroup() |>
+  group_by(pir_year) |>
+  mutate(state_rank = rank(-percent_homeless, ties.method = "min")) |>
+  ungroup()
+
+ma_state_rank <- percent_homeless_table |>
+  filter(State == "MA" & pir_year == 2024) |>
+  select(state_rank) |>
+  pull()
+
+list(
+  icon = "award",
+  color = "info",
+  value = ma_state_rank
+)
+```
+
+```{r}
+#| fill: false
+#| title: "Top 5 States + MA in terms of percent of children enrolled in Head Start that are homeless"
+percent_homeless_table |>
+  filter(pir_year == 2024 & (State == "MA" | state_rank <= 5)) |>
+  select(State, 
+         `State Rank` = state_rank,
+         `% Homeless Enrolled` =  percent_homeless) |>
+  gt()
+```
+
+```{r}
+#| fill: false
+
+us_states <- states(cb = TRUE, 
+                    resolution = "20m", 
+                    progress_bar = FALSE) |>
+  left_join(percent_homeless_table |>
+              filter(pir_year == 2024), by = c("STUSPS" = "State")) |>
+  st_transform(4326)
+
+labels <- paste("<strong>", 
+                us_states$NAME,
+                "</strong><br>Rank:", 
+                us_states$state_rank,
+                "<br>% Homeless Enrolled:",
+                us_states$percent_homeless) |>
+  lapply(htmltools::HTML)
+
+pal_bin_state_rank <- colorBin(palette="BuGn", 
+                    domain = us_states$percent_homeless,
+                    bins = 5)
+
+homeless_hs_map <- leaflet(width = "100%") %>%
+  setView(lat = 30, lng = -95, zoom = 3) %>%
+  addProviderTiles(providers$Esri.NatGeoWorldMap) |> 
+  addPolygons(data = us_states, 
+              weight = 1,
+              color = "black",
+              fillColor = ~pal_bin_state_rank(percent_homeless),
+              fillOpacity = 0.8, 
+              label = labels) |>
+  addLegend(data = us_states,
+            title = "% Homeless Enrolled HS", 
+            pal = pal_bin_state_rank, 
+            values = ~percent_homeless)
+
+homeless_hs_map
+```
+
+
+## Overview of Homeless Counts from Different Sources
+
+Counting the number of homeless children from ages 0-5 in the United States poses significant challenges. Annual point-in-time counts of sheltered and unsheltered homeless populations tracked by the Department of Housing and Urban Development count all homeless children under the age of 18, without further age disaggregation. Point-in-time counts also exclude individuals temporarily sheltered with family members, in motels, or in other hidden places. Public school counts of childhood homelessness tend to be higher because the Department of Education adopts the much broader McKinney-Vento Act definition of homelessness. However, public schools are often the first institution to identify a child's living status, and there are very few students under the age of 5 enrolled in public schools systems. Any child ages 0-5 that receives services as a result of a McKinney-Vento Subgrant Program gets counted by the Department of Education, but since many homeless children do not receive these services, this too is a poor proxy for estimating the extent of early childhood homelessness. 
+
+Given these limitations, SchoolHouse Connection has developed a method of calculating homelessness that determines the percentage of homeless children in Grade 1 in a given year and region, and then applying that percentage to the population of children from ages 0-5 in that same year and region. To the right we can see that the Grade 1 proxy method identifies at least 9 times as many homeless children as any other method of estimation. Even the Grade 1 proxy method is an underestimate as research has shown that even public schools struggle to identify homeless children. 
+
+See: Shephard, D.D., Hall, C.C., & Lamberton, C. (2021). Increasing identification of homeless students: An experimental evaluation of increased communication incorporating behavioral insights, Educational Researcher, 50(4), 239–248. https://doi.org/10.3102/0013189X20981067
+
+
+```{r}
+#| fill: false
+
+ed_totals_under_5 |>
+  mutate(HOMELESS_3_5_655 = as.numeric(HOMELESS_3_5_655),
+         HOMELESS_0_5_818 = as.numeric(HOMELESS_0_5_818)) |>
+  select(STATENAME, 
+         YEAR_END, 
+         HOMELESS_UNDER_5_GRADE_1,
+         HOMELESS_3_5_655, 
+         HOMELESS_0_5_818, 
+         TOTAL_HS_HOMELESS_ENROLL) |>
+  pivot_longer(cols = c(HOMELESS_UNDER_5_GRADE_1, 
+               HOMELESS_3_5_655, 
+               HOMELESS_0_5_818, 
+               TOTAL_HS_HOMELESS_ENROLL),
+               names_to = "HOMELESS_MEASURE",
+               values_to = "HOMELESS_COUNT") |>
+  mutate(HOMELESS_MEASURE = case_when(HOMELESS_MEASURE == "HOMELESS_UNDER_5_GRADE_1" ~
+                                        "Grade 1 Proxy Method",
+                                      HOMELESS_MEASURE == "HOMELESS_3_5_655" ~
+                                        "Chidren 3-5 Enrolled in Public Schools (File 655)",
+                                      HOMELESS_MEASURE == "HOMELESS_0_5_818" ~
+                                        "Children 0-5 Served by McKinney-Vento subgrant funds (File 818)",
+                                      HOMELESS_MEASURE == "TOTAL_HS_HOMELESS_ENROLL" ~
+                                        "Homeless Children Enrolled in Head Start")) |>
+  filter(STATENAME == "MASSACHUSETTS") |>
+  ggplot(aes(x = YEAR_END, 
+             y = HOMELESS_COUNT, 
+             col = HOMELESS_MEASURE, 
+             group = HOMELESS_MEASURE)) +
+  geom_line() +
+  theme_minimal() +
+  scale_color_manual(values = hs_palette) +
+  theme(legend.position = "bottom") +
+  guides(color = guide_legend(nrow = 5))  +
+  geom_text_repel(aes(label = HOMELESS_COUNT), 
+            vjust = -0.5,
+            size = 3) +
+  labs(x = "Year", y = "Homeless Count", col = "Metric Used to Measure Homelessness")
+  
+```
+
+
+
+## By Shelter Type
+
+The NPRM’s elimination of self-attestation would be detrimental to Head Start’s promise to serve the homeless population population. According to Department of Education data, in 2024, 66.9% of K-12 homeless students in Massachusetts were not living in emergency or transitional shelters but instead doubled up, living in hotels or motels, or unsheltered. These children meet the McKinney-Vento Act definition of homelessness but do not have access to immediate documentation of their status. This percentage is the closest we can come to estimating shelter situations for infants and children ages 0 to 5 since many homeless children are not counted until they enrolled in public schools. When we apply this percentage to the population of infants and children 0 to 5 in Massachusetts, the proposed changes would leave an estimated 13,024 homeless children across the state without the means to secure documentation for their enrollment in Head Start.
+
+For footnote: Shelter type is not reported disaggregated by grade. We took the percentage of K-12 students in each shelter type, each year for each state and multiplied that percentage by the number of homeless children under 5 identified via the Grade 1 proxy method.
+
+
+```{r}
+#| fill: false
+ed_totals_under_5_char |>
+  filter(STATENAME == "MASSACHUSETTS") |>
+  ggplot(aes(x = YEAR_END, y = TOTAL_CHAR_UNDER_5, fill = Characteristics)) +
+  geom_col(position = "dodge", width = 0.9) +
+  scale_fill_manual(values = hs_palette) +
+  theme_minimal() +
+  geom_text(aes(label = round(TOTAL_CHAR_UNDER_5, 0)),
+            position = position_dodge(width = 0.9),
+            size = 2,
+            vjust = -0.25  ) +
+  labs(x = "Year", y = "Homeless Count")
+```
+
+```{r}
+#| fill: false
+ed_totals_under_5_char |>
+  filter(STATENAME == "MASSACHUSETTS") |>
+  ggplot(aes(x = YEAR_END, y = TOTAL_CHAR_UNDER_5, fill = Characteristics)) +
+  geom_col(position = "fill") +
+  scale_fill_manual(values = hs_palette) +
+  theme_minimal() +
+  geom_text(aes(label = paste(as.character(round(PERCENT_CHAR_ST_YR, 4) * 100) , "%")),
+            position = position_fill(),
+            size = 2,
+            vjust = -0.25 ) +
+  scale_y_continuous(labels = scales::label_percent()) +
+  labs(x = "Year", y = "Homeless Percentage")
+```
+
+
+
+# Disability
+
+## IDEA Overview
+IDEA, or the Individuals with Disabilities Education Act, is the law that ensures all children have access to education regardless of disability. This means that children served by IDEA are those who require early intervention (e.g., speech or occupational therapy), special education, or another disability-related service. 
+
+## Disability in MA in 2024
+
+
+```{r}
+#| content: valuebox
+#| title: "Total number of infants and children 0-5 served under IDEA in MA"
+
+ma_disabled_total_2024 <- disability_under_5 |>
+  filter(ST == "MA" & YEAR_END == 2024) |>
+  select(IDEA_DISABLED_0_5) |>
+  pull()
+
+list(
+  icon = "hash",
+  color = "info",
+  value = format(ma_disabled_total_2024, big.mark = ",")
+)
+```
+
+```{r}
+#| content: valuebox
+#| title: "Proportion of the infants and children 0-5 served under IDEA in MA"
+
+ma_disabled_percent_2024 <- disability_under_5 |>
+  filter(ST == "MA" & YEAR_END == 2024) |>
+  select(STATEWIDE_PROP_DISABLED) |>
+  pull()
+
+list(
+  icon = "percent",
+  color = "info",
+  value = format(round(ma_disabled_percent_2024, 2), big.mark = ",")
+  )
+
+```
+
+
+## Head Start Disability Support, MA, 2024
+
+
+```{r}
+#| content: valuebox
+#| title: "Total number of children receiving IDEA services that Head Start serves in MA"
+
+ma_total_hs_disabled_2024 <- disability_under_5 |>
+  filter(ST == "MA" & YEAR_END == 2024) |>
+  select(HS_DISABLED) |>
+  pull()
+
+list(
+  icon = "hash",
+  color = "info",
+  value = format(ma_total_hs_disabled_2024, big.mark = ",")
+  )
+```
+
+```{r}
+#| content: valuebox
+#| title: "Percent of children enrolled in Head Start that receive IDEA services in MA"
+
+ma_percent_hs_disabled_2024 <- disability_under_5 |>
+  filter(ST == "MA" & YEAR_END == 2024) |>
+  select(PERCENT_HS_DISABLED) |>
+  pull()
+
+list(
+  icon = "percent",
+  color = "info",
+  value = format(round(ma_percent_hs_disabled_2024, 2), big.mark = ",")
+  )
+```
+
+```{r}
+#| content: valuebox
+#| title: "Percent of children served under IDEA in MA that Head Start serves"
+
+ma_percent_hs_disabled_serves_2024 <- disability_under_5 |>
+  filter(ST == "MA" & YEAR_END == 2024) |>
+  select(HS_SHARE_OF_STATE) |>
+  pull()
+
+list(
+  icon = "percent",
+  color = "info",
+  value = round(ma_percent_hs_disabled_serves_2024, 2)
+)
+```
+
+
+## Temporal Visualizations
+
+
+```{r}
+#| fill: false
+
+options(scipen = 999)
+disability_under_5 |>
+  filter(YEAR_END <= 2024) |>
+  mutate(is_ma = case_when(ST == "MA" ~ "MA",
+                           ST != "MA" ~ "Other States")) |>
+  group_by(YEAR_END, is_ma) |>
+  filter(!is.na(is_ma)) |>
+  summarize(disabled_children = sum(IDEA_DISABLED_0_5, na.rm = TRUE),
+            total_population = sum(POPULATION_UNDER_5, na.rm = TRUE)) |>
+  ungroup() |>
+  group_by(YEAR_END) |>
+  mutate(is_ma = case_when(is_ma == "MA" ~ "MA",
+                           is_ma != "MA" ~ "USA"),
+         disabled_children = case_when(is_ma == "MA" ~ disabled_children,
+                           is_ma == "USA" ~ sum(disabled_children, na.rm = TRUE)),
+         total_population = case_when(is_ma == "MA" ~ total_population,
+                           is_ma == "USA" ~ sum(total_population, na.rm = TRUE)),
+         percent_disabled = disabled_children / total_population * 100) |>
+  ggplot(aes(x = YEAR_END, y = percent_disabled, col = is_ma, group = is_ma)) +
+  geom_line() +
+  scale_x_continuous() +
+  scale_y_continuous() +
+  scale_color_manual(values = hs_palette) +
+  labs(x = "Year",
+       y = "% Children 0-5 Receiving IDEA Services",
+       col = "",
+       title = "Children 0-5 Receiving IDEA Services, 2021 - 2024") +
+  theme_minimal() +
+  geom_text(aes(label = round(percent_disabled, 2)),
+            vjust = -0.25)
+
+```
+
+```{r}
+#| fill: false
+
+combined_pir |>
+  mutate(is_ma = case_when(State == "MA" ~ "MA",
+                           State != "MA" ~ "Other States")) |>
+  group_by(pir_year, is_ma) |>
+  filter(!is.na(is_ma)) |>
+  summarize(disabled_children = sum(C.24, na.rm = TRUE) - sum(C.24.b, na.rm = TRUE) +
+                                sum(C.25, na.rm = TRUE) - sum(C.25.b, na.rm = TRUE),
+            total_child_enroll = sum(A.10.g, na.rm = TRUE)) |>
+  ungroup() |>
+  group_by(pir_year) |>
+  mutate(is_ma = case_when(is_ma == "MA" ~ "MA",
+                           is_ma != "MA" ~ "USA"),
+         disabled_children = case_when(is_ma == "MA" ~ disabled_children,
+                           is_ma == "USA" ~ sum(disabled_children, na.rm = TRUE)),
+         total_child_enroll = case_when(is_ma == "MA" ~ total_child_enroll,
+                           is_ma == "USA" ~ sum(total_child_enroll, na.rm = TRUE)),
+         percent_disabled = disabled_children / total_child_enroll * 100) |>
+  ggplot(aes(x = pir_year, y = percent_disabled, col = is_ma, group = is_ma)) +
+  geom_line() +
+  scale_x_continuous() +
+  scale_y_continuous() +
+  scale_color_manual(values = hs_palette) +
+  labs(x = "Year",
+       y = "% Enrolled Children Receiving IDEA Services",
+       col = "",
+       title = paste("Head Start IDEA Enrollments, ",
+                     min(combined_pir$pir_year),
+                     "-" ,
+                     max(combined_pir$pir_year))) +
+  theme_minimal() +
+  geom_text(aes(label = round(percent_disabled, 2)),
+            vjust = -0.25)
+
+```
+
+```{r}
+#| fill: false
+
+disability_under_5 |>
+  filter(YEAR_END <= 2024) |>
+  mutate(is_ma = case_when(ST == "MA" ~ "MA",
+                           ST != "MA" ~ "Other States")) |>
+  group_by(YEAR_END, is_ma) |>
+  filter(!is.na(is_ma)) |>
+  summarize(disabled_children = sum(IDEA_DISABLED_0_5, na.rm = TRUE),
+            hs_disabled = sum(HS_DISABLED, na.rm = TRUE)) |>
+  ungroup() |>
+  group_by(YEAR_END) |>
+  mutate(is_ma = case_when(is_ma == "MA" ~ "MA",
+                           is_ma != "MA" ~ "USA"),
+         disabled_children = case_when(is_ma == "MA" ~ disabled_children,
+                           is_ma == "USA" ~ sum(disabled_children, na.rm = TRUE)),
+         hs_disabled = case_when(is_ma == "MA" ~ hs_disabled,
+                           is_ma == "USA" ~ sum(hs_disabled, na.rm = TRUE)),
+         percent_served = hs_disabled / disabled_children * 100) |>
+  ggplot(aes(x = YEAR_END, y = percent_served, col = is_ma, group = is_ma)) +
+  geom_line() +
+  scale_x_continuous() +
+  scale_y_continuous() +
+  scale_color_manual(values = hs_palette) +
+  labs(x = "Year",
+       y = "% Children Receiving IDEA Services 0-5 Served by Head Start",
+       col = "",
+       title = "Head Start Share of Children Receiving IDEA 0-5, 2021 - 2024") +
+  theme_minimal() +
+  geom_text(aes(label = round(percent_served, 2)),
+            vjust = -0.25)
+
+```
+
+
+
+## Rankings
+
+
+
+```{r}
+#| content: valuebox
+#| title: "How MA ranks against other states in terms of percent of children enrolled in Head Start receiving IDEA services"
+#| fill: false
+
+disablity_state_rank <- combined_pir |>
+  group_by(pir_year, State) |>
+  summarize(disabled_children = sum(C.24, na.rm = TRUE) - sum(C.24.b, na.rm = TRUE) +
+                                sum(C.25, na.rm = TRUE) - sum(C.25.b, na.rm = TRUE),
+            total_child_enroll = sum(A.10.g, na.rm = TRUE),
+      percent_disabled = round(disabled_children / total_child_enroll * 100, 2)) |>
+  ungroup() |>
+  group_by(pir_year) |>
+  mutate(state_rank = rank(-percent_disabled, ties.method = "min")) |>
+  ungroup()
+
+ma_ranking <- disablity_state_rank |>
+  filter(State == "MA" & pir_year == 2024) |>
+  select(state_rank) |>
+  pull()
+
+list(
+  icon = "award",
+  color = "info",
+  value = ma_ranking
+)
+```
+
+```{r}
+#| fill: false
+#| title: "Top 5 States + MA in terms of percent of children enrolled in Head Start that are receiving IDEA services"
+disablity_state_rank |>
+  filter(pir_year == 2024 & (State == "MA" | state_rank <= 5)) |>
+  arrange(desc(percent_disabled)) |>
+  select(Rank = state_rank, 
+         State, 
+         `% receiving disablity services` = percent_disabled ) |>
+  kable()
+```
+
+```{r}
+#| fill: false
+
+us_states <- states(cb = TRUE, 
+                    resolution = "20m", 
+                    progress_bar = FALSE) |>
+  left_join(disablity_state_rank |>
+              filter(pir_year == 2024), by = c("STUSPS" = "State")) |>
+  st_transform(4326)
+
+labels <- paste("<strong>", 
+                us_states$NAME,
+                "</strong><br>Rank:", 
+                us_states$state_rank,
+                "<br>% receiving disablity services:",
+                us_states$percent_disabled) |>
+  lapply(htmltools::HTML)
+
+pal_bin_state_rank <- colorBin(palette="BuGn", 
+                    domain = us_states$percent_disabled,
+                    bins = 4)
+
+disability_hs_map <- leaflet(width = "100%") %>%
+  setView(lat = 30, lng = -95, zoom = 3) %>%
+  addProviderTiles(providers$Esri.NatGeoWorldMap) |> 
+  addPolygons(data = us_states, 
+              weight = 1,
+              color = "black",
+              fillColor = ~pal_bin_state_rank(percent_disabled),
+              fillOpacity = 0.8, 
+              label = labels) |>
+  addLegend(data = us_states,
+            title = "% Receiving IDEA Services", 
+            pal = pal_bin_state_rank, 
+            values = ~percent_disabled)
+
+disability_hs_map
+```
+
+
+## IDEA Evaluation Gap
+
+Under current standards, Head Start programs must serve children with suspected disabilities while those children wait to be evaluated for IDEA eligibility. However, the 2026 NPRM would remove that requirement. In Massachusetts the most common reason is an evaluation the responsible agency has not yet completed, meaning these children would lose a guarantee of services while they wait.
+
+## IDEA Evaluation Plots
+
+
+```{r}
+#| fill: false
+
+combined_pir |>
+  mutate(is_ma = case_when(State == "MA" ~ "MA",
+                           State != "MA" ~ "Other States")) |>
+  group_by(pir_year, is_ma) |>
+  filter(!is.na(is_ma)) |>
+  summarize(not_evaluated = sum(C.22.b, na.rm = TRUE),
+            referred = sum(C.22, na.rm = TRUE),
+            .groups = "drop") |>
+  group_by(pir_year) |>
+  mutate(is_ma = case_when(is_ma == "MA" ~ "MA",
+                           is_ma != "MA" ~ "USA"),
+         not_evaluated = case_when(is_ma == "MA" ~ not_evaluated,
+                           is_ma == "USA" ~ sum(not_evaluated, na.rm = TRUE)),
+         referred = case_when(is_ma == "MA" ~ referred,
+                           is_ma == "USA" ~ sum(referred, na.rm = TRUE)),
+         percent_not_evaluated = not_evaluated / referred * 100) |>
+  ggplot(aes(x = pir_year, y = percent_not_evaluated, col = is_ma, group = is_ma)) +
+  geom_line() +
+  scale_color_manual(values = hs_palette) +
+  labs(x = "Year",
+       y = "% of Referred Children Not Evaluated",
+       col = "",
+       title = "Children Referred for IDEA Evaluation Who Were Not Evaluated, 2021 - 2025") +
+  theme_minimal() +
+  geom_text(aes(label = round(percent_not_evaluated, 2)), vjust = -0.25)
+```
+
+```{r}
+#| fill: false
+
+combined_pir |>
+  filter(State == "MA") |>
+  group_by(pir_year) |>
+  summarize(`Evaluation pending (agency)` = sum(C.23.c, na.rm = TRUE),
+            `Parent refused` = sum(C.23.b, na.rm = TRUE),
+            `Assigned to RTI` = sum(C.23.a, na.rm = TRUE),
+            `Other` = sum(C.23.d, na.rm = TRUE),
+            .groups = "drop") |>
+  pivot_longer(-pir_year, names_to = "reason", values_to = "n") |>
+  mutate(reason = factor(reason, levels = c("Evaluation pending (agency)",
+                                            "Parent refused",
+                                            "Assigned to RTI",
+                                            "Other"))) |>
+  ggplot(aes(x = pir_year, y = n, col = reason, group = reason)) +
+  geom_line() +
+  scale_color_manual(values = hs_palette) +
+  labs(x = "Year",
+       y = "Number of Children (MA)",
+       col = "",
+       title = "Reported Reasons MA Children Referred for IDEA Were Not Evaluated, 2021 - 2025") +
+  theme_minimal() +
+  geom_text(aes(label = n), vjust = -0.5, show.legend = FALSE)
+```
+
+```{r}
+#| fill: false
+
+combined_pir |>
+  filter(State == "MA") |>
+  group_by(pir_year) |>
+  summarize(enroll = sum(A.10.g, na.rm = TRUE),
+            `Receiving services` = sum(C.24, na.rm = TRUE) - sum(C.24.b, na.rm = TRUE) +
+                                   sum(C.25, na.rm = TRUE) - sum(C.25.b, na.rm = TRUE),
+            `Has plan, not receiving` = sum(C.24.b, na.rm = TRUE) + sum(C.25.b, na.rm = TRUE),
+            `Pending evaluation` = sum(C.23.c, na.rm = TRUE),
+            `Other referred, not evaluated` = sum(C.22.b, na.rm = TRUE) - sum(C.23.c, na.rm = TRUE),
+            .groups = "drop") |>
+  pivot_longer(-c(pir_year, enroll), names_to = "status", values_to = "n") |>
+  mutate(pct = n / enroll * 100,
+         status = factor(status, levels = c("Other referred, not evaluated",
+                                            "Pending evaluation",
+                                            "Has plan, not receiving",
+                                            "Receiving services"))) |>
+  ggplot(aes(x = pir_year, y = pct, fill = status)) +
+  geom_col() +
+  scale_fill_manual(values = hs_palette) +
+  labs(x = "Year",
+       y = "% of Enrolled Children",
+       fill = "",
+       title = "MA Head Start: Children Receiving IDEA Services vs. Identified and Waiting, 2021 - 2025") +
+  theme_minimal() +
+  geom_text(aes(label = ifelse(status == "Has plan, not receiving", "", round(pct, 1))), position = position_stack(vjust = 0.5), size = 3)
+```
+
+
+## Dual Language Learners in MA, 2024
+
+
+```{r}
+#| content: valuebox
+#| title: "Total number of infants and children 0-5 that are DLL in MA"
+
+statewide_dll <- statewide_dll
+
+list(
+  icon = "hash",
+  color = "info",
+  value = round(statewide_dll, 0)
+)
+```
+
+```{r}
+#| content: valuebox
+#| title: "Proportion of the infants and children 0-5 that are DLL in MA"
+
+statewide_percentage <- statewide_percent * 100
+
+list(
+  icon = "percent",
+  color = "info",
+  value = round(statewide_percentage, 2)
+)
+```
+
+
+# Dual Language Learners
+## Dual Language Learners in MA, 2024
+
+
+```{r}
+#| content: valuebox
+#| title: "Total number of infants and children 0-5 that are DLL in MA"
+
+statewide_dll <- statewide_dll
+
+list(
+  icon = "hash",
+  color = "info",
+  value = round(statewide_dll, 0)
+)
+```
+
+```{r}
+#| content: valuebox
+#| title: "Proportion of the infants and children 0-5 that are DLL in MA"
+
+statewide_percentage <- statewide_percent * 100
+
+list(
+  icon = "percent",
+  color = "info",
+  value = round(statewide_percentage, 2)
+)
+```
+
+
+## Head Start Dual Language Learners, MA, 2024
+
+
+```{r}
+#| content: valuebox
+#| title: "Total number of DLL children that Head Start serves in MA"
+
+dll_hs <- headstart_dll_ma|>
+  filter(pir_year == 2024)
+headstart_dll <- dll_hs$total_dll_enroll
+
+list(
+  icon = "hash",
+  color = "info",
+  value = headstart_dll
+)
+```
+
+```{r}
+#| content: valuebox
+#| title: "Percent of children enrolled in Head Start that are DLL in MA"
+
+hsswdllprop <- headstart_dll/statewide_dll
+hsswdllpercentage <- hsswdllprop * 100
+
+list(
+  icon = "percent",
+  color = "info",
+  value = round(hsswdllpercentage, 2)
+)
+```
+
+```{r}
+#| content: valuebox
+#| title: "Percent of dual language learners in MA that Head Start serves"
+
+headstart_total <- dll_hs$total_child_enroll
+
+hsdllprop <- headstart_dll/headstart_total
+hsdllpercentage <- hsdllprop * 100
+
+list(
+  icon = "percent",
+  color = "info",
+  value = round(hsdllpercentage, 2)
+)
+```
+
+
+## Temporal Visualizations
+
+
+```{r}
+#| fill: false
+
+options(scipen = 999)
+non_e_517_ma |>
+  ggplot(aes(x = year, y = percent_non_e)) +
+  geom_line() +
+  scale_x_continuous() +
+  scale_y_continuous(limits = c(0,1)) +
+  scale_color_manual(values = hs_palette) +
+  labs(x = "Year", 
+       y = "% Dual Language Learners",
+       title = paste("Dual Language Learner Population via Age 5-17 Proxy, MA, ",
+                     min(non_e_517_ma$year), 
+                     "-" , 
+                     max(non_e_517_ma$year))) +
+  theme_minimal()  +
+  geom_text(aes(label = round(percent_non_e, 2)), 
+            vjust = -0.25)
+```
+
+```{r}
+#| fill: false
+
+ma_dllenroll |>
+  ggplot(aes(x = TimeFrame, y = dll_prop)) +
+  geom_line() +
+  scale_x_continuous() +
+  scale_y_continuous() +
+  scale_color_manual(values = hs_palette) +
+  labs(x = "Year",
+       y = "% Enrolled that are Dual Language Learners",
+       col = "",
+       title = paste("Head Start Dual Language Learners Served, MA, ",
+                     min(ma_dllenroll$TimeFrame),
+                     "-" ,
+                     max(ma_dllenroll$TimeFrame))) +
+  theme_minimal() +
+  geom_text(aes(label = round(dll_prop, 2)),
+            vjust = -0.25)
+```
+
+
+
+
+## Rankings
+
+
+```{r}
+#| content: valuebox
+#| title: "How Massachusetts ranks compared to other states in terms of percent of children enrolled in Head Start that are dual language learners"
+#| fill: false
+
+dll_state_rank <- combined_pir |>
+  group_by(pir_year, State) |>
+  summarize(total_child_enroll = sum(A.10.g, na.rm = TRUE), 
+            total_dll_enroll = sum(A.27, na.rm = TRUE),
+            percent_dll = total_dll_enroll / total_child_enroll * 100, 2) |>
+  ungroup() |>
+  group_by(pir_year) |>
+  mutate(state_rank = rank(-percent_dll, ties.method = "min")) |>
+  ungroup()
+
+ma_ranking <- dll_state_rank |>
+  filter(State == "MA" & pir_year == 2024) |>
+  select(state_rank) |>
+  pull()
+
+list(
+  icon = "award",
+  color = "info",
+  value = ma_ranking
+)
+```
+
+```{r}
+#| fill: false
+#| title: "Top 5 States + MA in terms of percent of children enrolled in Head Start that are dual language learners"
+dll_state_rank |>
+  filter(pir_year == 2024 & (State == "MA" | state_rank <= 5)) |>
+  arrange(desc(percent_dll)) |>
+  select(State, 
+         `% dual language learners` = percent_dll ) |>
+  kable()
+```
+
+```{r}
+#| fill: false
+
+us_states <- states(cb = TRUE, 
+                    resolution = "20m", 
+                    progress_bar = FALSE) |>
+  left_join(dll_state_rank |>
+              filter(pir_year == 2024), by = c("STUSPS" = "State")) |>
+  st_transform(4326)
+
+labels <- paste("<strong>", 
+                us_states$NAME,
+                "</strong><br>Rank:", 
+                us_states$state_rank,
+                "<br>% dual language learners:",
+                us_states$percent_dll) |>
+  lapply(htmltools::HTML)
+
+pal_bin_state_rank <- colorBin(palette="BuGn", 
+                    domain = us_states$percent_dll,
+                    bins = 4)
+
+dll_hs_map <- leaflet(width = "100%") %>%
+  setView(lat = 30, lng = -95, zoom = 3) %>%
+  addProviderTiles(providers$Esri.NatGeoWorldMap) |> 
+  addPolygons(data = us_states, 
+              weight = 1,
+              color = "black",
+              fillColor = ~pal_bin_state_rank(percent_dll),
+              fillOpacity = 0.8, 
+              label = labels) |>
+  addLegend(data = us_states,
+            title = "% Dual Language Learners", 
+            pal = pal_bin_state_rank, 
+            values = ~percent_dll)
+
+dll_hs_map
+```
+
+ 
+# Dual Language Educators
+
+## Bilingual Teachers in MA in 2024
+The NPRM prohibits preferential hiring for bilingual educators and promoting bilingualism at Head Start. It estimates that about 1 in 3 bilingual Head Start educators would lose their jobs as a result of this change, as it claims that not all bilingual educators could be retrained for English-only instruction. The available census and Head Start data records whether people speak a language other than English, so these figures assume that an educator in the state of Massachusetts most likely speaks English.
+
+
+```{r}
+#| content: valuebox
+#| title: "Total number of childcare workers and pre-k and kindergarten teachers that speak a language other than English in MA (estimate)"
+
+teacher_lang_summary <- ma_pums_recoded |>
+  filter(OCCP == 2300 | OCCP == 4600) |>
+  summarize(total = sum(PWGTP),
+            speak_another_lang = sum(PWGTP[LANX == 1]),
+            prop = speak_another_lang/total)
+
+teacher_summary <- ma_pums_recoded |>
+  summarize(total = sum(PWGTP),
+            teachers = sum(PWGTP[OCCP == 2300 | OCCP == 4600]),
+            prop = teachers / total)
+
+total_teacher_est <- total_pop_ma$estimate[[1]] * teacher_summary$prop
+
+total_bilingual_teacher_est <- total_teacher_est * teacher_lang_summary$prop
+
+list(
+  icon = "hash",
+  color = "info",
+  value = format(round(total_bilingual_teacher_est), big.mark = ",")
+)
+```
+
+```{r}
+#| content: valuebox
+#| title: "Proportion of childcare workers and pre-k and kindergarten teachers that speak a language other than English in MA"
+
+teacher_lang_percent <- teacher_lang_summary$prop * 100
+
+list(
+  icon = "percent",
+  color = "info",
+  value = format(round(teacher_lang_percent, 2), big.mark = ",")
+)
+```
+
+
+## Head Start Bilingual Teachers, MA, 2024
+
+```{r}
+#| content: valuebox
+#| title: "Total Number of Biliingual Teachers, Assistant Teachers, Home Visitors, and FCC Providers at Head Start in MA"
+
+bilingual_hs <- pir_b |>
+  filter(State == "MA") |>
+  filter(pir_year == 2024) |>
+  summarize(bilingual_teachers = sum(B.14))
+
+list(
+  icon = "hash",
+  color = "info",
+  value = format(bilingual_hs$bilingual_teachers, big.mark = ",")
+)
+```
+
+```{r}
+#| content: valuebox
+#| title: "Precent of Teachers, Assistant Teachers, Home Visitors, and FCC Providers That Are Bilingual at Head Start in MA"
+
+hs_staff_summary <- pir_b |>
+  filter(State == "MA") |>
+  filter(pir_year == 2024) |>
+  summarize(bilingual_teachers_etc = sum(B.14, na.rm = TRUE),
+            total_preschool_classroom = sum(`B.3-1`, na.rm = TRUE),
+            total_preschool_asst = sum(`B.3-2`, na.rm = TRUE),
+            total_infant_toddler_teacher = sum(B.6, na.rm = TRUE),
+            total_home_visitor = sum(B.8, na.rm = TRUE),
+            total_FCC = sum(B.9, na.rm = TRUE),
+            denom = (total_preschool_classroom + total_preschool_asst + total_infant_toddler_teacher + total_home_visitor + total_FCC),
+            percent_bilingual_teachers_etc = bilingual_teachers_etc / denom)
+
+
+list(
+  icon = "percent",
+  color = "info",
+  value = format(round(hs_staff_summary$percent_bilingual_teachers_etc * 100, 2), big.mark = ",")
+)
+```
+
+```{r}
+#| content: valuebox
+#| title: "Proportion of childcare workers and pre-k and kindergarten teachers that speak a language other than English employed at Head Start in MA"
+
+prop_at_hs <- bilingual_hs$bilingual_teachers / total_bilingual_teacher_est * 100
+
+list(
+  icon = "percent",
+  color = "info",
+  value = format(round(prop_at_hs, 2), big.mark = ",")
+)
+```
+
+
+The NPRM is especially of concern in Massachusetts, where nearly half of Head Start educators, home visitors, and family childcare providers speak a language other than English. In comparison with the rest of the state, in which only 30% of similar professionals speak another language, Head Start is unique in the amount of multilingual staff it hires. At Head Start, a multilingual staff serve a multilingual student body and multilingual families, but the NPRM puts all three of those groups in jeopardy.
+
+## Temporal Visualizations
+
+```{r}
+#| fill: false
+
+earlyed_2024 <- pums_recoded_2024 |>
+  filter(OCCP == 2300 | OCCP == 4600) |>
+  mutate(year = 2024)
+earlyed_2023 <- pums_recoded_2023 |>
+  filter(OCCP == 2300 | OCCP == 4600) |>
+  mutate(year = 2023)
+earlyed_2022 <- pums_recoded_2022 |>
+  filter(OCCP == 2300 | OCCP == 4600) |>
+  mutate(year = 2022) |>
+  rename(STATE = ST,
+         STATE_label = ST_label)
+earlyed_2021 <- pums_recoded_2021 |>
+  filter(OCCP == 2300 | OCCP == 4600) |>
+  mutate(year = 2021) |>
+  rename(STATE = ST,
+         STATE_label = ST_label)
+
+combined_earlyed <- dplyr::bind_rows(earlyed_2024, earlyed_2023, earlyed_2022, earlyed_2021)
+
+combined_earlyed |>
+  mutate(is_ma = case_when(STATE == 25 ~ "MA",
+                           STATE != 25 ~ "Other States")) |>
+  group_by(year, is_ma) |>
+  filter(!is.na(is_ma)) |>
+  summarize(total_earlyeds = sum(PWGTP),
+            total_bilingual = sum(PWGTP[LANX == 1])) |>
+  ungroup() |>
+  group_by(year) |>
+  mutate(is_ma = case_when(is_ma == "MA" ~ "MA",
+                           is_ma != "MA" ~ "USA"),
+         total_earlyeds = case_when(is_ma == "MA" ~ total_earlyeds,
+                           is_ma == "USA" ~ sum(total_earlyeds, na.rm = TRUE)),
+         total_bilingual = case_when(is_ma == "MA" ~ total_bilingual,
+                           is_ma == "USA" ~ sum(total_bilingual)),
+          percent_bilingual = total_bilingual / total_earlyeds * 100) |>
+  ggplot(aes(x = year, y = percent_bilingual, col = is_ma, group = is_ma)) +
+  geom_line() +
+  scale_x_continuous(breaks = min(year):max(year)) +
+    scale_color_manual(values = hs_palette) +
+  labs(x = "Year",
+       y = "Percent of Multilingual Early Educators", 
+       title = "MA Has A Higher Proportion of Multilingual Early Educators, But That's Decreasing",
+       subtitle = "American Community Survey Public Use Microdata Sample, 2021-2024") +
+  theme_minimal()
+```
+
+```{r}
+#| fill: false
+pir_b |>
+  mutate(is_ma = case_when(State == "MA" ~ "MA",
+                           State != "MA" ~ "Other States")) |>
+  group_by(pir_year, is_ma) |>
+  filter(!is.na(is_ma)) |>
+  summarize(bilingual_teachers_etc = sum(B.14, na.rm = TRUE),
+             total_preschool_classroom = sum(`B.3-1`, na.rm = TRUE),
+            total_preschool_asst = sum(`B.3-2`, na.rm = TRUE),
+            total_infant_toddler_teacher = sum(B.6, na.rm = TRUE),
+            total_home_visitor = sum(B.8, na.rm = TRUE),
+            total_FCC = sum(B.9, na.rm = TRUE),
+            denom = (total_preschool_classroom + total_preschool_asst + total_infant_toddler_teacher + total_home_visitor + total_FCC)) |>
+  ungroup() |>
+  group_by(pir_year) |>
+  mutate(is_ma = case_when(is_ma == "MA" ~ "MA",
+                           is_ma != "MA" ~ "USA"),
+         bilingual_teachers_etc = case_when(is_ma == "MA" ~ bilingual_teachers_etc,
+                           is_ma == "USA" ~ sum(bilingual_teachers_etc, na.rm = TRUE)),
+         denom = case_when(is_ma == "MA" ~ denom,
+                           is_ma == "USA" ~ sum(denom)),
+          percent_bilingual_teachers_etc = bilingual_teachers_etc / denom * 100) |>
+  ggplot(aes(x = pir_year, y = percent_bilingual_teachers_etc, col = is_ma, group = is_ma)) +
+  geom_line() +
+  scale_x_continuous(breaks = min(pir_a$pir_year):max(pir_a$pir_year)) +
+    scale_color_manual(values = hs_palette) +
+  labs(x = "Year",
+       y = "Percent of Multilingual Staff*", 
+       title = "MA HS has More Multilingual Staff*",
+       subtitle = "Head Start Program Information Report, 2021-2025",
+       caption = "*'Staff' includes teachers, assistant teachers, home visitors, and family childcare providers") +
+  theme_minimal()
+```
+
+
+Together, these two graphs show why the NPRM is especially of concern in Massachusetts. As a whole and at Head Start, Massachusetts has a higher proportion of multilingual early educators than the rest of the nation, At Head Start, the proportion of multilingual staff is also increasing faster than the rest of the nation. This means that nearly one third of Head Start staff nationally, and nearly half in Massachusetts, will have to be retrained or are at risk of losing their jobs if the NPRM passes in its current form. This has the potential to be incredibly disruptive in Massachusetts, as nearly half of educators must entirely transform how they teach.
+
+
+```{r}
+#| fill: false
+
+#get pop of ma vs US for all years, multiply by percent early ed, multiply by percent bilingual, divide hs number by that number
+
+
+bilingual_ma_vs_usa <- combined_earlyed |>
+  mutate(is_ma = case_when(STATE == 25 ~ "MA",
+                           STATE != 25 ~ "Other States")) |>
+  group_by(year, is_ma) |>
+  filter(!is.na(is_ma)) |>
+  summarize(total_earlyeds = sum(PWGTP),
+            total_bilingual = sum(PWGTP[LANX == 1])) |>
+  ungroup() |>
+  group_by(year) |>
+  mutate(is_ma = case_when(is_ma == "MA" ~ "MA",
+                           is_ma != "MA" ~ "USA"),
+         total_earlyeds = case_when(is_ma == "MA" ~ total_earlyeds,
+                           is_ma == "USA" ~ sum(total_earlyeds, na.rm = TRUE)),
+         total_bilingual = case_when(is_ma == "MA" ~ total_bilingual,
+                           is_ma == "USA" ~ sum(total_bilingual)),
+          percent_bilingual = total_bilingual / total_earlyeds * 100)
+
+ma_vs_usa_pop <- dplyr::bind_rows(total_pop_by_year, total_pop_ma_acs1)
+
+ma_vs_usa_pop <- ma_vs_usa_pop |>
+  mutate(year = case_when(year == 1 ~ 2021,
+                          year == 2 ~ 2022,
+                          year == 3 ~ 2023,
+                          year == 4 ~ 2024),
+         is_ma = case_when(GEOID == 1 ~ "USA",
+                           GEOID == 25 ~ "MA"))
+
+bilingual_vs_total <- left_join(ma_vs_usa_pop, bilingual_ma_vs_usa)
+
+earlyeds_prop_usa_2021 <- sum(earlyed_2021$PWGTP)/sum(pums_recoded_2021$PWGTP) 
+earlyeds_prop_usa_2022 <- sum(earlyed_2022$PWGTP)/sum(pums_recoded_2022$PWGTP)
+earlyeds_prop_usa_2023 <- sum(earlyed_2023$PWGTP)/sum(pums_recoded_2023$PWGTP)
+earlyeds_prop_usa_2024 <- sum(earlyed_2024$PWGTP)/sum(pums_recoded_2024$PWGTP)
+earlyeds_prop_ma_2021 <- sum(earlyed_2021$PWGTP[earlyed_2021$STATE == 25])/sum(pums_recoded_2021$PWGTP[pums_recoded_2021$ST == 25])
+earlyeds_prop_ma_2022 <- sum(earlyed_2022$PWGTP[earlyed_2022$STATE == 25])/sum(pums_recoded_2022$PWGTP[pums_recoded_2022$ST == 25])
+earlyeds_prop_ma_2023 <- sum(earlyed_2023$PWGTP[earlyed_2023$STATE == 25])/sum(pums_recoded_2023$PWGTP[pums_recoded_2023$STATE == 25])
+earlyeds_prop_ma_2024 <- sum(earlyed_2024$PWGTP[earlyed_2024$STATE == 25])/sum(pums_recoded_2024$PWGTP[pums_recoded_2024$STATE == 25])
+
+prop_earlyed <- c(earlyeds_prop_usa_2021, earlyeds_prop_usa_2022, earlyeds_prop_usa_2023, earlyeds_prop_usa_2024, earlyeds_prop_ma_2021, earlyeds_prop_ma_2023, earlyeds_prop_ma_2022, earlyeds_prop_ma_2021)
+
+bilingual_vs_total$prop_earlyed <- prop_earlyed
+
+bilingual_vs_total <- bilingual_vs_total |>
+  mutate(est_total_bilingual_earlyed = estimate * prop_earlyed * percent_bilingual / 100)
+
+hs <- pir_b |>
+  filter(pir_year != 2025) |>
+  mutate(is_ma = case_when(State == "MA" ~ "MA",
+                           State != "MA" ~ "Other States")) |>
+  group_by(pir_year, is_ma) |>
+  filter(!is.na(is_ma)) |>
+  summarize(bilingual_teachers_etc = sum(B.14, na.rm = TRUE)) |>
+              ungroup() |>
+  group_by(pir_year) |>
+  mutate(is_ma = case_when(is_ma == "MA" ~ "MA",
+                           is_ma != "MA" ~ "USA"),
+         bilingual_teachers_etc = case_when(is_ma == "MA" ~ bilingual_teachers_etc,
+                           is_ma == "USA" ~ sum(bilingual_teachers_etc, na.rm = TRUE))) |>
+  rename(year = pir_year)
+
+bilingual_vs_total <- left_join(bilingual_vs_total, hs)
+bilingual_vs_total <- bilingual_vs_total |>
+  mutate(percent_served = bilingual_teachers_etc / est_total_bilingual_earlyed * 100)
+
+bilingual_vs_total |>
+  ggplot(aes(x = year, y = percent_served, col = is_ma, group = is_ma)) +
+  geom_line() +
+  scale_x_continuous(breaks = min(year):max(year)) +
+    scale_color_manual(values = hs_palette) +
+  labs(x = "Year",
+       y = "Percent of Bilingual Early Educators Working At HS*", 
+       title = "Percent of Bilingual Early Educators Working at Head Start, 2021-2024*",
+       subtitle = "American Community Survey, American Community Survey Public Use Microdata Sample, Head Start Program Information Report, 2021-2025") +
+  theme_minimal()
+```
+
+
+## MA Ranking
+
+```{r}
+#| content: valuebox
+#| title: "How MA Ranks vs Other States for Bilingual Staff at Head Start"
+
+multilingual_staff_rank <- pir_b |>
+  filter(pir_year == 2024) |>
+  group_by(State) |>
+  summarize(bilingual_teachers_etc = sum(B.14, na.rm = TRUE),
+            total_preschool_classroom = sum(`B.3-1`, na.rm = TRUE),
+            total_preschool_asst = sum(`B.3-2`, na.rm = TRUE),
+            total_infant_toddler_teacher = sum(B.6, na.rm = TRUE),
+            total_home_visitor = sum(B.8, na.rm = TRUE),
+            total_FCC = sum(B.9, na.rm = TRUE),
+            denom = (total_preschool_classroom + total_preschool_asst + total_infant_toddler_teacher + total_home_visitor + total_FCC),
+            percent_bilingual_teachers_etc = bilingual_teachers_etc / denom * 100) |>
+  mutate(state_rank = rank(-percent_bilingual_teachers_etc, ties.method = "min"))
+
+ma_rank <- multilingual_staff_rank |>
+  filter(State == "MA") |>
+  select(state_rank) |>
+  pull()
+  
+
+list(
+  icon = "award",
+  color = "info",
+  value = ma_rank
+)
+```
+
+```{r}
+#| fill: false
+#| title: "Top 5 States + MA in terms of percent of staff Head Start that speak another language"
+multilingual_staff_rank |>
+  filter((State == "MA" | state_rank <= 5)) |>
+  arrange(desc(percent_bilingual_teachers_etc)) |>
+  select(State, 
+         `Rank` = state_rank,
+         `% Staff Speak Another Language` =  percent_bilingual_teachers_etc,
+         `Total Staff Speak Another Language` = bilingual_teachers_etc) |>
+  kable()
+```
+
+```{r}
+us_states <- states(cb = TRUE, 
+                    resolution = "20m", 
+                    progress_bar = FALSE) |>
+  left_join(multilingual_staff_rank, by = c("STUSPS" = "State")) |>
+  st_transform(4326)
+
+labels <- paste("<strong>", 
+                us_states$NAME,
+                "</strong><br>Rank:", 
+                us_states$state_rank,
+                "<br>% Staff Speak Another Language:",
+                us_states$percent_bilingual_teachers_etc) |>
+  lapply(htmltools::HTML)
+
+pal_bin_state_rank <- colorBin(palette="BuGn", 
+                    domain = us_states$percent_bilingual_teachers_etc,
+                    bins = 5)
+
+staff_hs_map <- leaflet(width = "100%") %>%
+  setView(lat = 30, lng = -95, zoom = 3) %>%
+  addProviderTiles(providers$Esri.NatGeoWorldMap) |> 
+  addPolygons(data = us_states, 
+              weight = 1,
+              color = "black",
+              fillColor = ~pal_bin_state_rank(percent_bilingual_teachers_etc),
+              fillOpacity = 0.8, 
+              label = labels) |>
+  addLegend(data = us_states,
+            title = "% HS Staff Speak Another Language", 
+            pal = pal_bin_state_rank, 
+            values = ~percent_bilingual_teachers_etc)
+
+staff_hs_map
+```
+
+
+## Appendix {.appendix}
+
+```{r}
+pir_b |>
+  filter(pir_year == 2024) |>
+  group_by(State) |>
+  summarize(total_staff = sum(`B.1-1`),
+    bilingual_teachers_etc = sum(B.14, na.rm = TRUE),
+            total_preschool_classroom = sum(`B.3-1`, na.rm = TRUE),
+            total_preschool_asst = sum(`B.3-2`, na.rm = TRUE),
+            total_infant_toddler_teacher = sum(B.6, na.rm = TRUE),
+            total_home_visitor = sum(B.8, na.rm = TRUE),
+            total_FCC = sum(B.9, na.rm = TRUE),
+            denom = (total_preschool_classroom + total_preschool_asst + total_infant_toddler_teacher + total_home_visitor + total_FCC),
+            percent_bilingual_teachers_etc = bilingual_teachers_etc / denom * 100,
+    total_programs = n()) |>
+  mutate(state_rank = rank(-percent_bilingual_teachers_etc, ties.method = "min")) |>
+  select(State, 
+         `% Staff Speak Another Language` =  percent_bilingual_teachers_etc,
+         `Total Staff Speak Another Language` = bilingual_teachers_etc,
+         `Total Staff` = total_staff,
+         `Total Programs` = total_programs)|>
+  kable()
+```

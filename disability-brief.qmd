@@ -26,7 +26,7 @@ options(tidyverse.quiet = TRUE)
 
 source("pir_source.R")
 source("disability_source.R")
-hs_palette <- c("#e51937","#0063a6","#fff13b","#499f68","#84dcc6","#693668","#373d20","#717744")
+hs_palette <- c("#e51937","#0063a6", "#F18F01","#499f68","#84dcc6","#693668","#373d20","#717744")
 
 include_states <- c(state.abb, "DC", "PR")
 combined_pir <- combined_pir |> filter(State %in% include_states)
