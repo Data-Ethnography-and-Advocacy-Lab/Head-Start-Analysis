@@ -12,3 +12,24 @@ execute:
   messages: false
   warnings: false
 ---
+```{r}
+options(tidyverse.quiet = TRUE)
+options(tidycensus.quiet = TRUE)
+options(download.file.method = "auto", quiet = TRUE) 
+options(scipen = 999)
+
+source("pir_source.R")
+source("DLLCensusSource.R")
+source("bilingual-teachers-source.R")
+
+
+hs_palette <- c("#e51937","#0063a6","#F18F01","#499f68","#84dcc6","#693668","#373d20","#717744")
+
+theme_set(theme_minimal(base_size = 16) +
+            theme(
+              legend.position = "bottom",
+              panel.grid.minor = element_blank(),
+              panel.grid.major = element_line(color = "#efefef", linewidth = 0.3),
+            text = element_text(family = "roboto", size = 16, color = "black")))
+```
+
