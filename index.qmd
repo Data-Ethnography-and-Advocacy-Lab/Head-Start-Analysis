@@ -1207,6 +1207,8 @@ pir_b |>
 
 Together, these two graphs show why the NPRM is especially of concern in Massachusetts. As a whole and at Head Start, Massachusetts has a higher proportion of multilingual early educators than the rest of the nation, At Head Start, the proportion of multilingual staff is also increasing faster than the rest of the nation. This means that nearly one third of Head Start staff nationally, and nearly half in Massachusetts, will have to be retrained or are at risk of losing their jobs if the NPRM passes in its current form. This has the potential to be incredibly disruptive in Massachusetts, as nearly half of educators must entirely transform how they teach.
 
+Additionally, the NPRM prohibits preferential hiring and salary incentives for bilingual teachers. Since nearly half of teachers in MA are bilingual, a significant number of them may decide to pursue other opportunities, and recruiting bilingual teachers would become challenging for centers.
+
 ```{r}
 #| fill: false
 
@@ -1368,6 +1370,41 @@ staff_hs_map <- leaflet(width = "100%") %>%
 
 staff_hs_map
 ```
+
+## Bilingual Students vs Teachers Comparison
+```{r}
+#| fill: false
+combined_pir |>
+  mutate(is_ma = case_when(State == "MA" ~ "MA",
+                           State != "MA" ~ "Other States")) |>
+  group_by(pir_year, is_ma) |>
+  filter(!is.na(is_ma)) |>
+  summarize(bilingual_teachers_etc = sum(B.14, na.rm = TRUE),
+            total_dll_enroll = sum(A.27, na.rm = TRUE)) |>
+  ungroup() |>
+  group_by(pir_year) |>
+  mutate(is_ma = case_when(is_ma == "MA" ~ "MA",
+                           is_ma != "MA" ~ "USA"),
+         bilingual_teachers_etc = case_when(is_ma == "MA" ~ bilingual_teachers_etc,
+                           is_ma == "USA" ~ sum(bilingual_teachers_etc, na.rm = TRUE)),
+         total_dll_enroll = case_when(is_ma == "MA" ~ total_dll_enroll,
+                           is_ma == "USA" ~ sum(total_dll_enroll, na.rm = TRUE)),
+         ratio = total_dll_enroll / bilingual_teachers_etc) |>
+  ggplot(aes(x = pir_year, y = ratio, col = is_ma, group = is_ma)) +
+  geom_line() +
+  scale_x_continuous(breaks = min(combined_pir$pir_year):max(combined_pir$pir_year)) +
+    scale_color_manual(values = hs_palette) +
+  labs(x = "Year", 
+       y = "DLLs per Bilingual Teacher",
+       col = "",
+       title = paste("Head Start Change in Bilingual Teachers and DLLs, ",
+                     min(combined_pir$pir_year), 
+                     "-" , 
+                     max(combined_pir$pir_year))) +
+  theme_minimal()
+
+```
+
 
 ## Appendix {.appendix}
 ```{r}
