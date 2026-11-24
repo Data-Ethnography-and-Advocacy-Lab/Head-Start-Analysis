@@ -1283,13 +1283,6 @@ combined_pir |>
   group_by(pir_year, is_ma) |>
   filter(!is.na(is_ma)) |>
   summarize(bilingual_teachers_etc = sum(B.14, na.rm = TRUE),
-             total_preschool_classroom = sum(`B.3-1`, na.rm = TRUE),
-            total_preschool_asst = sum(`B.3-2`, na.rm = TRUE),
-            total_infant_toddler_teacher = sum(B.6, na.rm = TRUE),
-            total_home_visitor = sum(B.8, na.rm = TRUE),
-            total_FCC = sum(B.9, na.rm = TRUE),
-            denom = (total_preschool_classroom + total_preschool_asst + total_infant_toddler_teacher + total_home_visitor + total_FCC),
-            total_child_enroll = sum(A.10.g, na.rm = TRUE), 
             total_dll_enroll = sum(A.27, na.rm = TRUE)) |>
   ungroup() |>
   group_by(pir_year) |>
@@ -1297,26 +1290,15 @@ combined_pir |>
                            is_ma != "MA" ~ "USA"),
          bilingual_teachers_etc = case_when(is_ma == "MA" ~ bilingual_teachers_etc,
                            is_ma == "USA" ~ sum(bilingual_teachers_etc, na.rm = TRUE)),
-         denom = case_when(is_ma == "MA" ~ denom,
-                           is_ma == "USA" ~ sum(denom)),
          total_dll_enroll = case_when(is_ma == "MA" ~ total_dll_enroll,
                            is_ma == "USA" ~ sum(total_dll_enroll, na.rm = TRUE)),
-         total_child_enroll = case_when(is_ma == "MA" ~ total_child_enroll,
-                           is_ma == "USA" ~ sum(total_child_enroll, na.rm = TRUE)),
-         percent_bilingual_teachers_etc = bilingual_teachers_etc / denom * 100,
-         percent_dll = total_dll_enroll/total_child_enroll * 100) |>
-  pivot_longer(
-    cols = c(percent_bilingual_teachers_etc, percent_dll),
-    names_to = "variable",
-    values_to = "value") |>
-  ggplot(aes(x = pir_year, y = value, col = is_ma, group = is_ma)) +
+         ratio = total_dll_enroll / bilingual_teachers_etc) |>
+  ggplot(aes(x = pir_year, y = ratio, col = is_ma, group = is_ma)) +
   geom_line() +
-  facet_wrap(~ variable) +
-  scale_x_continuous() +
-  scale_y_continuous(limits = c(0, 100)) +
-  scale_color_manual(values = hs_palette) +
+  scale_x_continuous(breaks = min(combined_pir$pir_year):max(combined_pir$pir_year)) +
+    scale_color_manual(values = hs_palette) +
   labs(x = "Year", 
-       y = "% Change",
+       y = "DLLs per Bilingual Teacher",
        col = "",
        title = paste("Head Start Change in Bilingual Teachers and DLLs, ",
                      min(combined_pir$pir_year), 
