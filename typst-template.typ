@@ -33,7 +33,7 @@
                 title,
                 font: "Roboto",
                 fill: white,
-                weight: "black",
+                weight: "bold",
               )
             ],
             align(right)[
@@ -41,7 +41,7 @@
                 date,
                 font: "Roboto",
                 fill: white,
-                weight: "black",
+                weight: "bold",
               )
             ],
           )
@@ -69,7 +69,7 @@
       size: size,
       fill: rgb("#0063a6"),
       font: "Roboto",
-      weight: "black",
+      weight: "bold",
     )
     align(alignment)[#formatted_heading]
   }
@@ -84,7 +84,7 @@
         font: "Roboto",
         size: 20pt,
         fill: rgb("#0063a6"),
-        weight: "black",
+        weight: "bold",
       )
     ],
     align(right)[

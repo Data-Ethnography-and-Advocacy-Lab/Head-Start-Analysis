@@ -6,6 +6,8 @@ format:
       template-partials: 
          - typst-show.typ
          - typst-template.typ
+filters:
+  - wrapped
 execute:
   echo: false
   messages: false
@@ -31,12 +33,12 @@ source("homeless_source.R")
 
 hs_palette <- c("#e51937","#0063a6","#F18F01","#499f68","#84dcc6","#693668","#373d20","#717744")
 
-theme_set(theme_minimal(base_size = 8) +
+theme_set(theme_minimal(base_size = 16) +
             theme(
               legend.position = "bottom",
               panel.grid.minor = element_blank(),
               panel.grid.major = element_line(color = "#efefef", linewidth = 0.3),
-            text = element_text(family = "roboto", size = 8, color = "black")))
+            text = element_text(family = "roboto", size = 16, color = "black")))
 ```
 
 ```{r}
@@ -96,26 +98,20 @@ ma_state_rank <- percent_homeless_table |>
 
 ```
 
-# Summary of NPRM
+
+On August 7, 2026, the Administration for Children and Families (ACF) published a Notice of Proposed Rulemaking entitled "Reducing Federal Burden for Head Start Programs," which proposed to rescind several Head Start performance standards. Among the proposed changes, the Rule would remove several standards designed to ensure that homeless children do not face barriers to enrollment. 
 
 ## Homelessness for Children 0-5 in Massachusetts
 
-::: {layout="[70, 30]" layout-valign="top"}
-
-::: {}
-
-In 2024, an estimated `r format(ma_homeless_total_2024, big.mark = ",")` children ages 0 to 5 were homeless in Massachusetts. Head Start enrolled `r format(ma_total_hs_homeless_2024, big.mark = ",")` (`r ma_percent_hs_homeless_serves_2024`%) of those children. 
-
-Massachusetts ranks `r ordinal(ma_state_rank)` in the country in terms of percentage of children enrolled in Head Start that are homeless: in 2024, `r ma_percent_hs_homeless_2024`% of children enrolled in Head Start in Massachusetts were homeless, up from `r ma_percent_hs_homeless_2023`% in 2023.  This rise in homeless enrollment is consistent with rising homelessness rates among infants and children across the state, and also consistent with increases in the cost of living in Massachusetts. This rise in homeless enrollment is consistent with rising homelessness rates among infants and children across the state, and also consistent with increases in the cost of living in Massachusetts.
-:::
-
-::: {}
 
 ```{r}
 #| warning: false
 #| message: false
-#| fig-width: 2.5
-#| fig-height: 2.5
+#| classes: wrap-right
+#| out-width: "35%"
+#| label: fig-over-time
+#| fig-cap: "Children Enrolled in Head Start in Massachusetts"
+
 combined_pir |>
   mutate(is_ma = case_when(State == "MA" ~ "MA",
                            State != "MA" ~ "Other States")) |>
@@ -136,34 +132,33 @@ combined_pir |>
   ggplot(aes(x = pir_year, y = percent_homeless, col = is_ma, group = is_ma)) +
   geom_line(linewidth = 1) +
   scale_x_continuous() +
-  scale_y_continuous(limits = c(0,20)) +
+  scale_y_continuous(limits = c(0,20),
+                     labels = label_percent(scale = 1)) +
   scale_color_manual(values = hs_palette) +
   labs(x = "", 
-       y = "% Enrolled Homeless Children",
+       y = "% Homeless",
        col = "") +
   geom_text(aes(label = round(percent_homeless, 2)), 
             vjust = -0.25) 
 ```
-:::
-::: 
+
+In 2024, an estimated `r format(ma_homeless_total_2024, big.mark = ",")` children ages 0 to 5 were homeless in Massachusetts. Head Start enrolled `r format(ma_total_hs_homeless_2024, big.mark = ",")` (`r ma_percent_hs_homeless_serves_2024`%) of those children. 
+
+Massachusetts ranks `r ordinal(ma_state_rank)` in the country in terms of percentage of children enrolled in Head Start that are homeless: in 2024, `r ma_percent_hs_homeless_2024`% of children enrolled in Head Start in Massachusetts were homeless, up from `r ma_percent_hs_homeless_2023`% in 2023.  This rise in homeless enrollment is consistent with rising homelessness rates among infants and children across the state, and also consistent with increases in the cost of living in Massachusetts. This rise in homeless enrollment is consistent with rising homelessness rates among infants and children across the state, and also consistent with increases in the cost of living in Massachusetts.
+
+
+
 
 ## Impacts of Elimination of Self-Attestation
-
-::: {layout="[70, 30]" layout-valign="top"}
-
-::: {}
-
-The McKinney-Vento Act defines homeless children as "individuals who lack a fixed, regular, and adequate nighttime residence." In 2024, 66.9% of K-12 homeless students in Massachusetts were not living in emergency or transitional shelters but instead temporarily living with friends or family members, living in hotels or motels, or unsheltered ^[DOE Data; This percentage is the closest we can come to estimating shelter situations for infants and children ages 0 to 5 since many homeless children are not counted until they enrolled in public schools. ]. These children meet the McKinney-Vento Act definition of homelessness, but they do not have shelter intake letters or other service agency records to document their status. We estimate that the proposed changes would leave 13,024 homeless children ages 0-5 across the state without the means to secure immediate documentation for their enrollment in Head Start.
-
-:::
-
-::: {}
 
 ```{r}
 #| warning: false
 #| message: false
-#| fig-width: 2.5
-#| fig-height: 2.5
+#| classes: wrap-right
+#| out-width: "35%"
+#| label: fig-characteristics
+#| fig-cap: "Children Enrolled in Head Start in Massachusetts"
+#| 
 ed_totals_under_5_char |>
   filter(STATENAME == "MASSACHUSETTS" & !is.na(Characteristics)) |>
   mutate(Characteristics = str_replace(Characteristics, " transitional housing", "")) |>
@@ -175,8 +170,9 @@ ed_totals_under_5_char |>
   guides(fill = guide_legend(nrow = 2, byrow = TRUE))
 ```
 
-:::
-:::
+The McKinney-Vento Act defines homeless children as "individuals who lack a fixed, regular, and adequate nighttime residence." In 2024, 66.9% of K-12 homeless students in Massachusetts were not living in emergency or transitional shelters but instead temporarily living with friends or family members, living in hotels or motels, or unsheltered ^[DOE Data; This percentage is the closest we can come to estimating shelter situations for infants and children ages 0 to 5 since many homeless children are not counted until they enrolled in public schools. ]. These children meet the McKinney-Vento Act definition of homelessness, but they do not have shelter intake letters or other service agency records to document their status. We estimate that the proposed changes would leave 13,024 homeless children ages 0-5 across the state without the means to secure immediate documentation for their enrollment in Head Start.
+
+
 
 ```{=typst}
 #headline-box(

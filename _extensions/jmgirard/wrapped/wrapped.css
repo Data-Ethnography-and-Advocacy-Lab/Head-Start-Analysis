@@ -1,0 +1,67 @@
+/* wrapped: HTML layout for figures marked .wrap-left or .wrap-right.
+   The filter sets --wrap-width and --wrap-gap on each wrapped float, and
+   writes the breakpoint rule into the document header. */
+
+/* A group holds a wrapped figure and the paragraphs after it. flow-root
+   contains the float, so the block after the group starts below it. As one
+   block, the group also works on pages whose margin content turns the body
+   into a CSS grid, where a float among the grid items has no effect. */
+.wrap-group {
+  display: flow-root;
+}
+
+/* Quarto gives a cell's output wrapper overflow-x: auto, which would contain
+   the float of a wrapped cell figure and keep the text below it. */
+.wrap-group .cell-output-display {
+  overflow: visible;
+}
+
+/* A dashboard makes a cell's wrappers flex containers (html-fill-container),
+   where a float has no effect. As blocks, they let the float reach the
+   paragraphs after the cell. */
+.wrap-group .cell.html-fill-container,
+.wrap-group .cell-output-display.html-fill-container {
+  display: block;
+}
+
+/* A dashboard card that fills its height lets a fill item shrink below its
+   content, so the block after the group would sit over the figure. At its
+   content height, the group makes the card scroll as a paragraph does. */
+.wrap-group.html-fill-item {
+  flex: 0 0 auto;
+}
+
+.quarto-float.wrap-right,
+.wrapped-image.wrap-right {
+  float: right;
+  width: var(--wrap-width, 40%);
+  margin: 0 0 1em var(--wrap-gap, 1em);
+}
+
+.quarto-float.wrap-left,
+.wrapped-image.wrap-left {
+  float: left;
+  width: var(--wrap-width, 40%);
+  margin: 0 var(--wrap-gap, 1em) 1em 0;
+}
+
+.quarto-float.wrap-right img,
+.quarto-float.wrap-left img,
+.wrapped-image img {
+  width: 100%;
+  height: auto;
+  /* revealjs caps every image at max-width: 95%. */
+  max-width: 100%;
+}
+
+/* A table wider than its float's box scrolls inside the box, as in
+   Bootstrap's .table-responsive, so it does not run into the text beside
+   it. */
+.quarto-float.wrap-right .quarto-float-tbl > div,
+.quarto-float.wrap-left .quarto-float-tbl > div {
+  overflow-x: auto;
+}
+
+.wrap-clear {
+  clear: both;
+}

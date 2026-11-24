@@ -1,0 +1,10 @@
+title: Wrapped
+author: Jeffrey Girard
+version: 0.3.0
+quarto-required: ">=1.9.36"
+contributes:
+  filters:
+    - path: wrapped.lua
+      at: pre-quarto
+    - path: wrapped-docx.lua
+      at: post-render
